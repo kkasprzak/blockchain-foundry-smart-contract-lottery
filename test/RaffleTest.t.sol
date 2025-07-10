@@ -37,20 +37,20 @@ contract RaffleTest is Test {
 
     function test_RaffleRecordsPlayerWhenTheyEnter() public {
         Raffle raffle = new Raffle(0.01 ether);
-        
+
         address playerAddr = makeAddr("player");
         vm.deal(playerAddr, 1 ether);
         vm.prank(playerAddr);
         raffle.enterRaffle{value: 0.01 ether}();
-        
+
         assertTrue(raffle.isPlayerInRaffle(playerAddr));
     }
 
     function test_RaffleReturnsFalseForPlayerNotInRaffle() public {
         Raffle raffle = new Raffle(0.01 ether);
-        
+
         address playerAddr = makeAddr("player");
-        
+
         assertFalse(raffle.isPlayerInRaffle(playerAddr));
     }
 }
