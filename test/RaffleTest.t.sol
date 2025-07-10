@@ -5,6 +5,8 @@ import {Test, console} from "forge-std/Test.sol";
 import {Raffle} from "../src/Raffle.sol";
 
 contract RaffleTest is Test {
+    event RaffleEntered(address indexed player);
+
     function test_RaffleInitializes() public {
         Raffle raffle = new Raffle(0.01 ether);
         assertTrue(address(raffle) != address(0));
@@ -52,5 +54,17 @@ contract RaffleTest is Test {
         address playerAddr = makeAddr("player");
 
         assertFalse(raffle.isPlayerInRaffle(playerAddr));
+    }
+
+    function test_RaffleEmitsEventOnEntrance() public {
+        Raffle raffle = new Raffle(0.01 ether);
+        address playerAddr = makeAddr("player");
+        vm.deal(playerAddr, 1 ether);
+
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit RaffleEntered(playerAddr);
+
+        vm.prank(playerAddr);
+        raffle.enterRaffle{value: 0.01 ether}();
     }
 }

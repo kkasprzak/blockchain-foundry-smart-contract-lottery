@@ -2,10 +2,12 @@
 pragma solidity ^0.8.19;
 
 contract Raffle {
-    error Raffle__SendMoreToEnterRaffle();
-
     uint256 private immutable i_entranceFee;
     address payable[] private s_players;
+
+    event RaffleEntered(address indexed player);
+
+    error Raffle__SendMoreToEnterRaffle();
 
     constructor(uint256 entranceFee) {
         i_entranceFee = entranceFee;
@@ -16,6 +18,7 @@ contract Raffle {
             revert Raffle__SendMoreToEnterRaffle();
         }
         s_players.push(payable(msg.sender));
+        emit RaffleEntered(msg.sender);
     }
 
     function isPlayerInRaffle(address player) external view returns (bool) {
