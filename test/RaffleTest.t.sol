@@ -8,37 +8,37 @@ contract RaffleTest is Test {
     event RaffleEntered(address indexed player);
 
     function test_RaffleInitializes() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
         assertTrue(address(raffle) != address(0));
     }
 
     function test_RaffleInitializes_WithEntranceFee() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
 
         assertEq(raffle.getEntranceFee(), 0.01 ether);
     }
 
     function test_RaffleRevertsWhenYouDontPayEnough() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
 
         vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
         raffle.enterRaffle{value: 0.001 ether}();
     }
 
     function test_RaffleAllowsUserToEnterWithEnoughFee() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
 
         raffle.enterRaffle{value: 0.01 ether}();
     }
 
     function test_RaffleAllowsUserToEnterWithMoreThanEnoughFee() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
 
         raffle.enterRaffle{value: 0.02 ether}();
     }
 
     function test_RaffleRecordsPlayerWhenTheyEnter() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
 
         address playerAddr = makeAddr("player");
         vm.deal(playerAddr, 1 ether);
@@ -49,7 +49,7 @@ contract RaffleTest is Test {
     }
 
     function test_RaffleReturnsFalseForPlayerNotInRaffle() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
 
         address playerAddr = makeAddr("player");
 
@@ -57,7 +57,7 @@ contract RaffleTest is Test {
     }
 
     function test_RaffleEmitsEventOnEntrance() public {
-        Raffle raffle = new Raffle(0.01 ether);
+        Raffle raffle = new Raffle(0.01 ether, 30);
         address playerAddr = makeAddr("player");
         vm.deal(playerAddr, 1 ether);
 
@@ -66,5 +66,12 @@ contract RaffleTest is Test {
 
         vm.prank(playerAddr);
         raffle.enterRaffle{value: 0.01 ether}();
+    }
+
+    function test_PickWinnerRevertsWhenNotEnoughTimeHasPassed() public {
+        Raffle raffle = new Raffle(0.01 ether, 30);
+
+        vm.expectRevert(Raffle.Raffle__NotEnoughTimeHasPassed.selector);
+        raffle.pickWinner();
     }
 }

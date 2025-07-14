@@ -3,14 +3,19 @@ pragma solidity ^0.8.19;
 
 contract Raffle {
     uint256 private immutable i_entranceFee;
+    uint256 private immutable i_interval;
     address payable[] private s_players;
+    uint256 private s_lastTimeStamp;
 
     event RaffleEntered(address indexed player);
 
     error Raffle__SendMoreToEnterRaffle();
+    error Raffle__NotEnoughTimeHasPassed();
 
-    constructor(uint256 entranceFee) {
+    constructor(uint256 entranceFee, uint256 interval) {
         i_entranceFee = entranceFee;
+        i_interval = interval;
+        s_lastTimeStamp = block.timestamp;
     }
 
     function enterRaffle() external payable {
@@ -28,6 +33,12 @@ contract Raffle {
             }
         }
         return false;
+    }
+
+    function pickWinner() external {
+        if (block.timestamp - s_lastTimeStamp < i_interval) {
+            revert Raffle__NotEnoughTimeHasPassed();
+        }
     }
 
     function getEntranceFee() external view returns (uint256) {
