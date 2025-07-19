@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "forge fmt --check"
+            "command": "forge fmt -q"
           }
         ]
       }
