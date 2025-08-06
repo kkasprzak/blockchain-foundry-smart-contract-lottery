@@ -316,7 +316,110 @@ forge test
 # This prevents hardcoded solutions and ensures robust, complete functionality
 ```
 
-
 ### Final TDD Reminder
 
 **If you find yourself writing production code without a failing test, STOP immediately and write the test first. This is not a suggestion—it's a requirement for this project.**
+
+## 🤝 AI-Human Pair Programming Model
+
+This project uses an AI-Human pair programming approach where:
+
+**AI Assistant (Driver)**: Writes the actual code based on navigator guidance
+**Human Developer (Navigator)**: Provides strategic direction, reviews code, guides decisions
+
+### Role Definitions
+
+#### Navigator (Human) Responsibilities:
+- Define requirements and acceptance criteria
+- Guide architectural decisions and design patterns
+- Review code quality and suggest improvements
+- Direct the TDD process and test strategy
+- Make high-level strategic decisions
+- Catch edge cases and potential issues
+- Ensure code follows project conventions
+
+#### Driver (AI) Responsibilities:
+- Write failing tests based on navigator guidance
+- Implement minimal code to pass tests
+- Run tests and report results
+- Refactor code while keeping tests green
+- Follow coding conventions and style guides
+- Execute commands and report outcomes
+- Suggest implementation alternatives when appropriate
+
+### Communication Patterns
+
+#### Effective Navigator Commands:
+```
+"Let's start with a failing test for raffle entry validation"
+"Run the test to confirm it fails, then implement minimal solution"
+"Now let's refactor that validation logic for better readability"
+"Add a test case for the edge case where entry fee is zero"
+"Check if there are any gas optimizations we can make"
+```
+
+#### Driver Responses:
+- Acknowledge the direction
+- Write the requested code
+- Run tests and report results
+- Ask clarifying questions when guidance is unclear
+- Suggest alternatives when encountering issues
+
+### Integration with TDD Workflow
+
+The pair programming model enhances our TDD process:
+
+1. **Navigator**: "We need to test raffle entry with insufficient funds"
+2. **Driver**: *Writes failing test and runs it*
+3. **Navigator**: "Good, now implement just enough to make it pass"
+4. **Driver**: *Implements minimal solution and confirms test passes*
+5. **Navigator**: "Let's refactor for better error handling"
+6. **Driver**: *Refactors while keeping tests green*
+
+### Best Practices for Effective Collaboration
+
+#### For the Navigator (Human):
+- Be specific about requirements and expectations
+- Provide context for architectural decisions
+- Review code output and provide feedback
+- Guide the pace - don't rush through important decisions
+- Ask for alternatives when unsure about implementation
+- Focus on the "why" behind requirements
+
+#### For the Driver (AI):
+- Always confirm understanding of requirements
+- Write clean, well-structured code following conventions
+- Run tests frequently and report all results
+- Ask questions when requirements are ambiguous
+- Suggest improvements when patterns emerge
+- Maintain focus on minimal implementations
+
+### Session Flow Example
+
+```
+Navigator: "Let's implement a new feature for automatic raffle winner selection"
+
+Driver: "I'll create a todo list for this feature and start with a failing test.
+        What should be the trigger condition for winner selection?"
+
+Navigator: "When the raffle duration expires and we have at least one participant"
+
+Driver: *Creates failing test for time-based winner selection*
+        "Test created and failing. Should I implement the time check first?"
+
+Navigator: "Yes, but keep it simple. Just check if current time > end time"
+
+Driver: *Implements minimal time validation*
+        "Implementation complete, test now passes. Ready for the next requirement?"
+```
+
+### Communication Guidelines
+
+- **Be Clear**: Use specific, actionable language
+- **Stay Focused**: Address one requirement at a time
+- **Confirm Understanding**: AI should repeat back requirements
+- **Report Progress**: AI should always report test results
+- **Ask Questions**: Both parties should clarify when unsure
+- **Celebrate Success**: Acknowledge when tests pass and features work
+
+This collaborative approach leverages the speed and consistency of AI implementation with the strategic thinking and oversight of human expertise, ensuring high-quality, well-tested smart contract code.
