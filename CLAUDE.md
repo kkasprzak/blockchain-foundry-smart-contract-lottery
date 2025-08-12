@@ -339,6 +339,7 @@ This project uses an AI-Human pair programming approach where:
 - Ensure code follows project conventions
 
 #### Driver (AI) Responsibilities:
+- **WAIT for Navigator permission** before starting each TDD cycle
 - Write failing tests based on navigator guidance
 - Implement minimal code to pass tests
 - Run tests and report results
@@ -346,6 +347,7 @@ This project uses an AI-Human pair programming approach where:
 - Follow coding conventions and style guides
 - Execute commands and report outcomes
 - Suggest implementation alternatives when appropriate
+- **NEVER start writing tests or implementation without explicit Navigator direction**
 
 ### Communication Patterns
 
@@ -399,19 +401,34 @@ The pair programming model enhances our TDD process:
 ```
 Navigator: "Let's implement a new feature for automatic raffle winner selection"
 
-Driver: "I'll create a todo list for this feature and start with a failing test.
-        What should be the trigger condition for winner selection?"
+Driver: "I understand the requirement. Should I start by writing a failing test?
+        What specific behavior should I test first?"
 
-Navigator: "When the raffle duration expires and we have at least one participant"
+Navigator: "Yes, start with a test for time-based trigger validation"
 
-Driver: *Creates failing test for time-based winner selection*
-        "Test created and failing. Should I implement the time check first?"
+Driver: *Waits for explicit permission, then creates failing test*
+        "Test created and failing. May I proceed to implement the minimal solution?"
 
-Navigator: "Yes, but keep it simple. Just check if current time > end time"
+Navigator: "Yes, implement just the time check"
 
-Driver: *Implements minimal time validation*
-        "Implementation complete, test now passes. Ready for the next requirement?"
+Driver: *Implements minimal time validation only after permission*
+        "Implementation complete, test now passes. What should we work on next?"
 ```
+
+### 🚨 CRITICAL Driver Protocol
+
+**The Driver (AI) MUST:**
+1. **Always ask Navigator permission** before starting any TDD cycle
+2. **Never assume** the next step - wait for explicit direction
+3. **Confirm understanding** of requirements before coding
+4. **Ask for permission** before each phase: test writing, implementation, refactoring
+5. **Report completion** and ask for next direction
+
+**Example Permission Requests:**
+- "Should I write a failing test for [specific behavior]?"
+- "May I proceed to implement the minimal solution to make this test pass?"
+- "The test is passing. Should I refactor or move to the next requirement?"
+- "What should be our next TDD cycle focus?"
 
 ### Communication Guidelines
 

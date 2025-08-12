@@ -6,6 +6,7 @@ import {Raffle} from "../src/Raffle.sol";
 
 contract RaffleTest is Test {
     event RaffleEntered(address indexed player);
+    event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
 
     function test_RaffleInitializes() public {
         Raffle raffle = _createValidRaffle();
@@ -44,33 +45,34 @@ contract RaffleTest is Test {
     }
 
     function test_RaffleRecordsPlayerWhenTheyEnter() public {
-        Raffle raffle = new Raffle(0.01 ether, 30);
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
 
-        address playerAddr = makeAddr("player");
-        vm.deal(playerAddr, 1 ether);
-        vm.prank(playerAddr);
-        raffle.enterRaffle{value: 0.01 ether}();
+        vm.deal(player, 1 ether);
+        vm.prank(player);
+        raffle.enterRaffle{value: entranceFee}();
 
-        assertTrue(raffle.isPlayerInRaffle(playerAddr));
+        assertTrue(raffle.isPlayerInRaffle(player));
     }
 
     function test_RaffleReturnsFalseForPlayerNotInRaffle() public {
         Raffle raffle = _createValidRaffle();
-        address playerAddr = makeAddr("player");
 
-        assertFalse(raffle.isPlayerInRaffle(playerAddr));
+        assertFalse(raffle.isPlayerInRaffle(makeAddr("player")));
     }
 
     function test_RaffleEmitsEventOnEntrance() public {
-        Raffle raffle = new Raffle(0.01 ether, 30);
-        address playerAddr = makeAddr("player");
-        vm.deal(playerAddr, 1 ether);
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+        vm.deal(player, 1 ether);
 
         vm.expectEmit(true, false, false, false, address(raffle));
-        emit RaffleEntered(playerAddr);
+        emit RaffleEntered(player);
 
-        vm.prank(playerAddr);
-        raffle.enterRaffle{value: 0.01 ether}();
+        vm.prank(player);
+        raffle.enterRaffle{value: entranceFee}();
     }
 
     function test_PickWinnerRevertsWhenNotEnoughTimeHasPassed() public {
@@ -99,7 +101,9 @@ contract RaffleTest is Test {
     }
 
     function test_PickWinnerSelectsWinnerFromParticipants() public {
-        Raffle raffle = new Raffle(0.01 ether, 30);
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
         address player1 = makeAddr("player1");
         address player2 = makeAddr("player2");
 
@@ -107,16 +111,94 @@ contract RaffleTest is Test {
         vm.deal(player2, 1 ether);
 
         vm.prank(player1);
-        raffle.enterRaffle{value: 0.01 ether}();
+        raffle.enterRaffle{value: entranceFee}();
 
         vm.prank(player2);
-        raffle.enterRaffle{value: 0.01 ether}();
+        raffle.enterRaffle{value: entranceFee}();
 
-        vm.warp(block.timestamp + 31);
+        _waitForDrawTime(interval + 1);
 
         address winner = raffle.pickWinner();
 
         assertTrue(winner == player1 || winner == player2);
+    }
+
+    function test_PickWinnerTransfersPrizeToWinner() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+        address player3 = makeAddr("player3");
+
+        vm.deal(player1, 1 ether);
+        vm.deal(player2, 1 ether);
+        vm.deal(player3, 1 ether);
+
+        vm.prank(player1);
+        raffle.enterRaffle{value: entranceFee}();
+
+        vm.prank(player2);
+        raffle.enterRaffle{value: entranceFee}();
+
+        vm.prank(player3);
+        raffle.enterRaffle{value: entranceFee}();
+
+        _waitForDrawTime(interval + 1);
+
+        uint256 totalPrizePool = entranceFee * 3;
+
+        address winner = raffle.pickWinner();
+        uint256 expectedWinnerBalance = 1 ether - entranceFee + totalPrizePool;
+
+        assertEq(winner.balance, expectedWinnerBalance);
+    }
+
+    function test_PickWinnerEmitsWinnerSelectedEvent() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        vm.deal(player, 1 ether);
+        vm.prank(player);
+        raffle.enterRaffle{value: entranceFee}();
+
+        _waitForDrawTime(interval + 1);
+
+        uint256 expectedPrizeAmount = entranceFee;
+
+        vm.expectEmit(true, false, false, true, address(raffle));
+        emit WinnerSelected(player, expectedPrizeAmount);
+
+        raffle.pickWinner();
+    }
+
+    function test_PickWinnerResetsRoundByRemovingParticipants() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        vm.deal(player1, 1 ether);
+        vm.deal(player2, 1 ether);
+
+        vm.prank(player1);
+        raffle.enterRaffle{value: entranceFee}();
+
+        vm.prank(player2);
+        raffle.enterRaffle{value: entranceFee}();
+
+        assertTrue(raffle.isPlayerInRaffle(player1));
+        assertTrue(raffle.isPlayerInRaffle(player2));
+
+        _waitForDrawTime(interval + 1);
+
+        raffle.pickWinner();
+
+        assertFalse(raffle.isPlayerInRaffle(player1));
+        assertFalse(raffle.isPlayerInRaffle(player2));
     }
 
     function _createValidRaffle() private returns (Raffle) {
@@ -129,6 +211,10 @@ contract RaffleTest is Test {
 
     function _createRaffleWithEntranceFee(uint256 entranceFee) private returns (Raffle) {
         return new Raffle(entranceFee, 1);
+    }
+
+    function _createRaffleWithEntranceFeeAndInterval(uint256 entranceFee, uint256 interval) private returns (Raffle) {
+        return new Raffle(entranceFee, interval);
     }
 
     function _waitForDrawTime(uint256 timeToWait) private {

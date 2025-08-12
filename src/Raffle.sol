@@ -9,6 +9,7 @@ contract Raffle {
     address private immutable i_operator;
 
     event RaffleEntered(address indexed player);
+    event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
 
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__NotEnoughTimeHasPassed();
@@ -41,7 +42,17 @@ contract Raffle {
             revert Raffle__NoParticipants();
         }
 
-        return s_players[_getRandomWinnerIndex()];
+        address winner = s_players[_getRandomWinnerIndex()];
+        uint256 prizeAmount = address(this).balance;
+
+        (bool success,) = payable(winner).call{value: prizeAmount}("");
+        require(success, "Prize transfer failed");
+
+        emit WinnerSelected(winner, prizeAmount);
+
+        _resetRaffleForNextRound();
+
+        return winner;
     }
 
     function isPlayerInRaffle(address player) external view returns (bool) {
@@ -59,5 +70,9 @@ contract Raffle {
 
     function _getRandomWinnerIndex() private view returns (uint256) {
         return uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % s_players.length;
+    }
+
+    function _resetRaffleForNextRound() private {
+        s_players = new address payable[](0);
     }
 }
