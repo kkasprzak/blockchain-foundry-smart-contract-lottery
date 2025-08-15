@@ -14,7 +14,7 @@ contract Raffle {
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__NotEnoughTimeHasPassed();
     error Raffle__NotOperator();
-    error Raffle__NoParticipants();
+    error Raffle__EntryWindowIsClosed();
 
     constructor(uint256 entranceFee, uint256 interval) {
         i_entranceFee = entranceFee;
@@ -27,30 +27,38 @@ contract Raffle {
         if (msg.value < i_entranceFee) {
             revert Raffle__SendMoreToEnterRaffle();
         }
+
+        if (_isEntryWindowClosed()) {
+            revert Raffle__EntryWindowIsClosed();
+        }
+
         s_players.push(payable(msg.sender));
         emit RaffleEntered(msg.sender);
     }
 
     function pickWinner() external returns (address) {
-        if (msg.sender != i_operator) {
+        if (false == _isLotteryOperator(msg.sender)) {
             revert Raffle__NotOperator();
         }
-        if (block.timestamp - s_lastTimeStamp < i_interval) {
+
+        if (_isEntryWindowOpen()) {
             revert Raffle__NotEnoughTimeHasPassed();
         }
+
         if (s_players.length == 0) {
-            revert Raffle__NoParticipants();
+            _resetRaffleForNextRound();
+            return address(0);
         }
 
         address winner = s_players[_getRandomWinnerIndex()];
         uint256 prizeAmount = address(this).balance;
 
+        _resetRaffleForNextRound();
+
         (bool success,) = payable(winner).call{value: prizeAmount}("");
         require(success, "Prize transfer failed");
 
         emit WinnerSelected(winner, prizeAmount);
-
-        _resetRaffleForNextRound();
 
         return winner;
     }
@@ -74,5 +82,18 @@ contract Raffle {
 
     function _resetRaffleForNextRound() private {
         s_players = new address payable[](0);
+        s_lastTimeStamp = block.timestamp;
+    }
+
+    function _isEntryWindowOpen() private view returns (bool) {
+        return block.timestamp - s_lastTimeStamp <= i_interval;
+    }
+
+    function _isEntryWindowClosed() private view returns (bool) {
+        return !_isEntryWindowOpen();
+    }
+
+    function _isLotteryOperator(address user) private view returns (bool) {
+        return user == i_operator;
     }
 }

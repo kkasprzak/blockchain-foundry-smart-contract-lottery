@@ -62,11 +62,15 @@ The Lottery Operator is the person or entity responsible for deploying, configur
     - When I pay an incorrect amount, my transaction is rejected.
     - I receive confirmation that my entry was successful.
     - I can verify that I'm included in the current round.
+    - Entries are only accepted until the draw interval has elapsed. After the interval has passed, new entries are rejected until the next round begins.
+    - If I attempt to enter after the entry window has closed, my transaction is rejected with a clear error message.
+    - The entry window and cutoff rules are clearly documented and verifiable on-chain.
 
 - US-003: Manual draw process for end-to-end testing
   Description: As a lottery operator, I want to manually trigger a draw when ready, so that I can select a winner and complete the initial end-to-end flow for testing purposes.
   Acceptance criteria:
-    - I can trigger a draw only when at least one participant has entered.
+    - I can trigger a draw after the entry window has elapsed, regardless of participant count.
+    - When I trigger a draw with no participants, the system resets the entry window for the next round without selecting a winner or transferring prizes.
     - Winner selection uses the simplest possible pseudo-random mechanism, sufficient for internal testing.
     - The draw process is logged via a basic event.
     - This functionality is for initial testing of the walking skeleton only and is not intended for real players.

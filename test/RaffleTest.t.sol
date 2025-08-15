@@ -112,15 +112,6 @@ contract RaffleTest is Test {
         raffle.pickWinner();
     }
 
-    function test_PickWinnerRevertsWhenNoParticipants() public {
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithInterval(interval);
-        _waitForDrawTime(interval + 1);
-
-        vm.expectRevert(Raffle.Raffle__NoParticipants.selector);
-        raffle.pickWinner();
-    }
-
     function test_PickWinnerSelectsWinnerFromParticipants() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
@@ -229,6 +220,23 @@ contract RaffleTest is Test {
 
         assertFalse(raffle.isPlayerInRaffle(player1));
         assertTrue(raffle.isPlayerInRaffle(player2));
+    }
+
+    function test_PickWinnerResetsRoundWhenNoParticipants() public {
+        uint256 interval = 30;
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+
+        _waitForDrawTime(interval + 1);
+
+        address winner = raffle.pickWinner();
+
+        assertEq(winner, address(0));
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        assertTrue(raffle.isPlayerInRaffle(player));
     }
 
     function _createValidRaffle() private returns (Raffle) {
