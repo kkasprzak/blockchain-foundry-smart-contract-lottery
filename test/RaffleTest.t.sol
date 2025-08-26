@@ -21,6 +21,22 @@ contract RaffleTest is Test {
         assertEq(raffle.getEntranceFee(), entranceFee);
     }
 
+    function test_RaffleRevertsWithInvalidEntranceFee() public {
+        uint256 invalidEntranceFee = 0;
+        uint256 validInterval = 1;
+
+        vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
+        new Raffle(invalidEntranceFee, validInterval);
+    }
+
+    function test_RaffleRevertsWithInvalidInterval() public {
+        uint256 validEntranceFee = 0.01 ether;
+        uint256 invalidInterval = 0;
+
+        vm.expectRevert(Raffle.Raffle__InvalidInterval.selector);
+        new Raffle(validEntranceFee, invalidInterval);
+    }
+
     function test_RaffleRevertsWhenYouDontPayEnough() public {
         uint256 entranceFee = 0.01 ether;
         uint256 insufficientPayment = entranceFee / 10;

@@ -1,26 +1,30 @@
-# Session Notes - 2025-01-15
+# Session Notes - August 26, 2025
 
 ## Feature Summary
-Discovered and analyzed a critical **Transaction Revert Vulnerability** in the `pickWinner()` method. While the method follows proper Checks-Effects-Interactions pattern and blocks traditional reentrancy attacks via access control, malicious winner contracts can cause permanent raffle failure by reverting ETH transfers, which rolls back all state changes including participant clearing.
+Working through code review recommendations to improve the smart contract lottery project. Successfully implemented constructor validation for entrance fee and interval parameters using TDD methodology. Next focus is gas optimization for inefficient player lookup functionality.
 
 ## Current Status
-• ✅ Code cleanup completed - removed unused `RevertingWinner` contract and `Raffle__NoParticipants` error
-• ✅ US-003 no-participants behavior implemented - `pickWinner()` resets entry window when no participants  
-• ✅ All 19 tests passing after recent changes
-• ✅ Security vulnerability identified and analyzed in detail
-• ✅ PRD updated with corrected acceptance criteria for US-003
+• ✅ Completed constructor validation (Recommended Action Item #3)
+• ✅ Added `Raffle__InvalidEntranceFee` and `Raffle__InvalidInterval` error handling
+• ✅ All 23 tests passing with proper TDD implementation
+• ✅ Contract now prevents deployment with invalid parameters (entranceFee = 0 or interval = 0)
+• ✅ Confirmed function ordering in Raffle.sol is already compliant with CLAUDE.md conventions
 
 ## Next Tasks
-• **HIGH PRIORITY**: Fix Transaction Revert Vulnerability in `pickWinner()` method
-• Write failing test to demonstrate malicious winner contract attack vector
-• Implement solution: remove `require(success, "Prize transfer failed")` or use better error handling
-• Consider additional protection layers (ReentrancyGuard, event logging for failed transfers)
-• Verify fix prevents raffle from getting permanently stuck
+• Implement gas optimization for player lookup in `isPlayerInRaffle()` function
+• Replace linear array search (O(n)) with mapping-based lookup (O(1))
+• Add `mapping(address => bool) private s_isPlayerInRaffle` for efficient player tracking
+• Follow TDD process: write failing tests → implement minimal solution → refactor
+• Update player entry/exit logic to maintain mapping consistency
 
 ## Important Reminders
-• **Attack Vector**: Malicious winner contracts can revert `receive()` causing `require(success, ...)` to revert entire transaction, rolling back `_resetRaffleForNextRound()` and creating infinite loop
-• **Key Insight**: This is NOT traditional reentrancy (blocked by operator access control) but transaction revert causing state rollback vulnerability
-• **Core Problem**: `require(success, "Prize transfer failed")` treats failed transfers as fatal errors instead of handling gracefully
+• Current inefficient code at `src/Raffle.sol:71-77` uses linear search through `s_players` array
+• Gas costs grow linearly with number of players - could become expensive with many participants
+• Must maintain both array (for winner selection) and mapping (for lookup) data structures
+
+---
+Previous Session (2025-01-15):
+**Transaction Revert Vulnerability** was identified and fixed - malicious winner contracts could cause permanent raffle failure by reverting ETH transfers.
 
 ---
 *Generated automatically by Driver during pair programming session*

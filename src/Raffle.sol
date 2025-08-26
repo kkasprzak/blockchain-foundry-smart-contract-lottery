@@ -16,8 +16,18 @@ contract Raffle {
     error Raffle__NotEnoughTimeHasPassed();
     error Raffle__NotOperator();
     error Raffle__EntryWindowIsClosed();
+    error Raffle__InvalidEntranceFee();
+    error Raffle__InvalidInterval();
 
     constructor(uint256 entranceFee, uint256 interval) {
+        if (entranceFee == 0) {
+            revert Raffle__InvalidEntranceFee();
+        }
+
+        if (interval == 0) {
+            revert Raffle__InvalidInterval();
+        }
+
         i_entranceFee = entranceFee;
         i_interval = interval;
         s_lastTimeStamp = block.timestamp;
@@ -80,13 +90,13 @@ contract Raffle {
         return i_entranceFee;
     }
 
-    function _getRandomWinnerIndex() private view returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % s_players.length;
-    }
-
     function _resetRaffleForNextRound() private {
         s_players = new address payable[](0);
         s_lastTimeStamp = block.timestamp;
+    }
+
+    function _getRandomWinnerIndex() private view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % s_players.length;
     }
 
     function _isEntryWindowOpen() private view returns (bool) {
