@@ -7,6 +7,7 @@ import {Raffle} from "../src/Raffle.sol";
 contract RaffleTest is Test {
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
+    event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
 
     function test_RaffleInitializes() public {
         Raffle raffle = _createValidRaffle();
@@ -239,6 +240,44 @@ contract RaffleTest is Test {
         assertTrue(raffle.isPlayerInRaffle(player));
     }
 
+    function test_PickWinnerContinuesWhenTransferFails() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        MaliciousWinnerRevertsOnReceive maliciousWinner = new MaliciousWinnerRevertsOnReceive();
+
+        _fundPlayerForRaffle(address(maliciousWinner), 1 ether);
+
+        _enterRaffleAsPlayer(raffle, address(maliciousWinner), entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        raffle.pickWinner();
+
+        assertFalse(raffle.isPlayerInRaffle(address(maliciousWinner)));
+    }
+
+    function test_PickWinnerEmitsPrizeTransferFailedWhenTransferReverts() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        MaliciousWinnerRevertsOnReceive maliciousWinner = new MaliciousWinnerRevertsOnReceive();
+
+        _fundPlayerForRaffle(address(maliciousWinner), 1 ether);
+        _enterRaffleAsPlayer(raffle, address(maliciousWinner), entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        uint256 expectedPrizeAmount = entranceFee;
+
+        vm.expectEmit(true, false, false, true, address(raffle));
+        emit PrizeTransferFailed(address(maliciousWinner), expectedPrizeAmount);
+
+        raffle.pickWinner();
+    }
+
     function _createValidRaffle() private returns (Raffle) {
         return new Raffle(1 ether, 1);
     }
@@ -266,5 +305,11 @@ contract RaffleTest is Test {
 
     function _fundPlayerForRaffle(address player, uint256 amount) private {
         vm.deal(player, amount);
+    }
+}
+
+contract MaliciousWinnerRevertsOnReceive {
+    receive() external payable {
+        revert("Malicious winner refuses payment");
     }
 }

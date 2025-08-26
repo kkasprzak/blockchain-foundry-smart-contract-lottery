@@ -10,6 +10,7 @@ contract Raffle {
 
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
+    event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
 
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__NotEnoughTimeHasPassed();
@@ -56,9 +57,12 @@ contract Raffle {
         _resetRaffleForNextRound();
 
         (bool success,) = payable(winner).call{value: prizeAmount}("");
-        require(success, "Prize transfer failed");
 
-        emit WinnerSelected(winner, prizeAmount);
+        if (success) {
+            emit WinnerSelected(winner, prizeAmount);
+        } else {
+            emit PrizeTransferFailed(winner, prizeAmount);
+        }
 
         return winner;
     }
