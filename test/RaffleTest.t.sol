@@ -70,6 +70,19 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, overpayment);
     }
 
+    function test_RaffleRevertsWhenPlayerIsAlreadyInRaffle() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        vm.expectRevert(Raffle.Raffle__PlayerIsAlreadyInRaffle.selector);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+    }
+
     function test_RaffleRevertsWhenEntryWindowIsClosed() public {
         uint256 interval = 30;
         uint256 entranceFee = 0.01 ether;

@@ -5,6 +5,7 @@ contract Raffle {
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     address payable[] private s_players;
+    mapping(address => bool) private s_playersInRaffle;
     uint256 private s_lastTimeStamp;
     address private immutable i_operator;
 
@@ -18,6 +19,7 @@ contract Raffle {
     error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
     error Raffle__InvalidInterval();
+    error Raffle__PlayerIsAlreadyInRaffle();
 
     constructor(uint256 entranceFee, uint256 interval) {
         if (entranceFee == 0) {
@@ -43,7 +45,12 @@ contract Raffle {
             revert Raffle__EntryWindowIsClosed();
         }
 
-        s_players.push(payable(msg.sender));
+        if (isPlayerInRaffle(msg.sender)) {
+            revert Raffle__PlayerIsAlreadyInRaffle();
+        }
+
+        _addPlayerToRaffle(msg.sender);
+
         emit RaffleEntered(msg.sender);
     }
 
@@ -77,22 +84,25 @@ contract Raffle {
         return winner;
     }
 
-    function isPlayerInRaffle(address player) external view returns (bool) {
-        for (uint256 i = 0; i < s_players.length; i++) {
-            if (s_players[i] == player) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
     }
 
+    function isPlayerInRaffle(address player) public view returns (bool) {
+        return s_playersInRaffle[player];
+    }
+
     function _resetRaffleForNextRound() private {
+        for (uint256 i = 0; i < s_players.length; i++) {
+            s_playersInRaffle[s_players[i]] = false;
+        }
         s_players = new address payable[](0);
         s_lastTimeStamp = block.timestamp;
+    }
+
+    function _addPlayerToRaffle(address player) private {
+        s_players.push(payable(player));
+        s_playersInRaffle[player] = true;
     }
 
     function _getRandomWinnerIndex() private view returns (uint256) {
