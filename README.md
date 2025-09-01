@@ -78,17 +78,63 @@ forge build
 forge test
 ```
 
-### Local Development
+## Deployment Environments
 
-Start a local Ethereum node:
-```bash
-anvil
-```
+This project supports deployment to multiple environments, each optimized for different stages of development:
 
-Deploy to local network:
-```bash
-forge script script/Counter.s.sol:CounterScript --rpc-url http://localhost:8545 --private-key <your_private_key>
-```
+### Environment Overview
+
+| Environment | Purpose | Network | Cost | Verification |
+|------------|---------|---------|------|--------------|
+| **Local** | Development & Testing | Anvil | Free | Not needed |
+| **Testnet** | Integration Testing | Sepolia | Testnet ETH | Etherscan |
+| **Mainnet** | Production | Ethereum | Real ETH | Etherscan |
+
+---
+
+## Local Environment (Anvil)
+
+**Use Case**: Rapid development, testing, and debugging
+
+### Prerequisites
+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) installed
+- No API keys required
+- No external ETH needed
+
+### Setup
+
+1. **Start Anvil to see available accounts:**
+   ```bash
+   anvil
+   # Displays 10 pre-funded accounts with their private keys
+   ```
+
+2. **Import one of Anvil's accounts into keystore:**
+   ```bash
+   cast wallet import localKey --interactive
+   # When prompted, use any private key from the Anvil output above
+   # Set a password for encryption
+   ```
+
+### Deployment
+
+1. **Start Anvil:**
+   ```bash
+   anvil
+   ```
+
+2. **Deploy contract:**
+   ```bash
+   make deploy-local
+   ```
+
+### Features
+- 10 pre-funded accounts (10,000 ETH each)
+- Instant block mining and transaction processing
+- No gas costs
+- State resets when Anvil restarts
+- Rich debugging information
 
 ## Available Scripts
 
@@ -133,17 +179,88 @@ Check code quality and style:
 solhint 'src/**/*.sol'
 ```
 
-### Deploy
-Deploy to Sepolia testnet:
+---
+
+## Testnet Environment (Sepolia)
+
+**Use Case**: Integration testing with real network conditions
+
+### Prerequisites
+
+1. **API Keys:**
+   - [Alchemy API Key](https://alchemy.com) for RPC endpoint
+   - [Etherscan API Key](https://etherscan.io/apis) for verification
+
+2. **Testnet ETH:**
+   - Get from [Sepolia Faucet](https://sepoliafaucet.com)
+   - Minimum ~0.01 ETH needed for deployment
+
+### Setup
+
+1. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   
+   # Edit .env with your API keys:
+   ALCHEMY_API_KEY=your_alchemy_api_key_here
+   ETHERSCAN_API_KEY=your_etherscan_api_key_here
+   ```
+
+2. **Set up keystore account:**
+   ```bash
+   cast wallet import sepoliaKey --interactive
+   # Enter your private key (without 0x prefix)
+   # Set a password for encryption
+   ```
+
+### Deployment
+
 ```bash
-forge script script/Counter.s.sol:CounterScript --rpc-url <sepolia_rpc_url> --private-key <your_private_key> --verify
+make deploy-sepolia
 ```
 
-### Interact with Contract
-Use Cast for on-chain interactions:
+This will:
+- Deploy with default parameters (0.01 ETH entry, 30s interval)
+- Automatically verify on Etherscan
+- Provide contract address and verification URL
+
+### Features
+- Real network conditions and gas costs
+- Etherscan verification and monitoring
+- Persistent state (doesn't reset)
+- Public testnet accessibility
+
+---
+
+## Mainnet Environment (Future)
+
+**Use Case**: Production deployment with real funds
+
+> ⚠️ **Not implemented yet** - Requires security audit and additional safety measures
+
+### Prerequisites (Planned)
+- Production RPC endpoint
+- Security audit completion
+- Multi-signature deployment setup
+
+### Security Requirements
+- Complete security audit
+- Extensive testnet validation  
+- Formal verification of critical functions
+- Multi-signature deployment process
+
+---
+
+## Available Deployment Commands
+
 ```bash
-cast <subcommand>
+make help           # Show all available commands
+make build          # Compile contracts  
+make test           # Run tests
+make deploy-local   # Deploy to local Anvil
+make deploy-sepolia # Deploy to Sepolia testnet
 ```
+
 
 ## Project Scope
 
