@@ -6,7 +6,7 @@ import {Raffle} from "../src/Raffle.sol";
 
 contract DeployRaffle is Script {
     uint256 public constant DEFAULT_ENTRANCE_FEE = 0.01 ether;
-    uint256 public constant DEFAULT_INTERVAL = 30; // 30 seconds for testing
+    uint256 public constant DEFAULT_INTERVAL = 300; // 5 minutes for testing
 
     function setUp() public {}
 
