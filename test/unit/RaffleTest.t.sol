@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Raffle} from "../src/Raffle.sol";
+import {Raffle} from "../../src/Raffle.sol";
 
 contract RaffleTest is Test {
     event RaffleEntered(address indexed player);

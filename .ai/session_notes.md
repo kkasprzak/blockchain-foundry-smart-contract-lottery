@@ -1,3 +1,32 @@
+# Session Notes - September 04, 2025
+
+## Feature Summary
+
+Implemented comprehensive integration testing following the Cyfrin course pattern for the Raffle smart contract. Successfully fixed script broadcast context issues, created player-focused integration tests, and validated that the deployment infrastructure can properly interact with deployed contracts on Sepolia testnet.
+
+## Current Status
+
+• ✅ Fixed RaffleEnterRaffle script with proper vm.startBroadcast() context for ETH transfers
+• ✅ Implemented test_PlayerCanEnterRaffle integration test using direct player interaction pattern
+• ✅ Validated script functionality against deployed Sepolia contract (EntryWindowIsClosed error confirms working integration)
+• ✅ Reviewed and improved all user stories in PRD to follow Given/When/Then format with specific error messages
+• ✅ Established proper separation between player testing (direct calls) and operator testing (scripts)
+
+## Next Tasks
+
+• Create integration test for picking a winner (next immediate priority)
+• Implement comprehensive multi-player raffle scenarios for realistic testing
+• Add operator script testing to validate deployment tooling
+• Create acceptance criteria automation framework based on improved user stories
+• Set up CI/CD pipeline to run acceptance criteria validation
+
+## Important Reminders
+
+• Integration test infrastructure now follows industry-standard Cyfrin pattern with proper broadcast context
+• DevOpsTools successfully locates deployed contracts and script interactions work correctly with Sepolia
+
+---
+
 # Session Notes - September 02, 2025
 
 ## Feature Summary
