@@ -48,81 +48,127 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
 ## 6. User stories
 
-- US-001: Deploy basic lottery
-  Description: As a lottery operator, I want to deploy a simple lottery contract on Sepolia, so that I can start offering a basic gambling service.
-  Acceptance criteria:
-    - Contract deploys successfully to Sepolia testnet.
-    - Entry fee amount is configurable at deployment.
-    - Basic contract configuration is verifiable on-chain.
+- **US-001: Deploy Basic Lottery Contract**
 
-- US-002: Enter lottery round
-  Description: As a player, I want to pay an entry fee to join the current lottery round, so that I have a chance to win the prize pool.
-  Acceptance criteria:
-    - When I pay the exact entry fee, I am included in the current lottery round.
-    - When I pay an incorrect amount, my transaction is rejected.
-    - I receive confirmation that my entry was successful.
-    - I can verify that I'm included in the current round.
-    - Entries are only accepted until the draw interval has elapsed. After the interval has passed, new entries are rejected until the next round begins.
-    - If I attempt to enter after the entry window has closed, my transaction is rejected with a clear error message.
-    - The entry window and cutoff rules are clearly documented and verifiable on-chain.
+  As a lottery operator,
+  I want to deploy a simple lottery contract on Sepolia testnet,
+  So that I can start offering a transparent gambling service with configurable parameters.
 
-- US-003: Manual draw process for end-to-end testing
-  Description: As a lottery operator, I want to manually trigger a draw when ready, so that I can select a winner and complete the initial end-to-end flow for testing purposes.
-  Acceptance criteria:
-    - I can trigger a draw after the entry window has elapsed, regardless of participant count.
-    - When I trigger a draw with no participants, the system resets the entry window for the next round without selecting a winner or transferring prizes.
-    - Winner selection uses the simplest possible pseudo-random mechanism, sufficient for internal testing.
-    - The draw process is logged via a basic event.
-    - This functionality is for initial testing of the walking skeleton only and is not intended for real players.
-    - Only the operator can trigger draws.
+  **Acceptance Criteria:**
+  - Given I provide an entry fee amount in the constructor, when I deploy the contract, then it deploys successfully to Sepolia testnet
+  - Given the contract is deployed, when I check the entry fee, then it matches the amount I configured at deployment
+  - Given the contract is deployed, when I verify on Etherscan, then the constructor parameters are visible and correct
+  - Given the contract is deployed, when I check ownership, then I am set as the initial owner
 
-- US-004: Distribute winnings
-  Description: As a winner, I want to automatically receive the entire prize pool when selected, so that I get my winnings immediately.
-  Acceptance criteria:
-    - Winner receives 100% of all collected entry fees.
-    - Prize transfer happens automatically after winner selection.
-    - Winner notification is logged through blockchain events.
-    - New lottery round starts automatically after prize distribution.
+- **US-002: Enter Lottery Round**
 
-- US-005: Integrate Verifiable Randomness
-  Description: As a player, I want winner selection to use a provably fair and tamper-proof source of randomness, so that I can trust the outcome is not manipulated.
-  Acceptance criteria:
-    - The manual draw's pseudo-randomness is replaced with a call to a verifiable random function (VRF) oracle (e.g., Chainlink VRF).
-    - The draw is still triggered manually by the operator.
-    - The randomness request and fulfillment are logged via events.
-    - The system handles potential delays or failures from the VRF oracle gracefully.
+  As a player,
+  I want to pay an entry fee to join the current lottery round,
+  So that I have a chance to win the prize pool.
 
-- US-006: Automate Draw Trigger
-  Description: As a player, I want the lottery draw to be triggered automatically at scheduled intervals, so I can be sure it runs on time without operator dependency.
-  Acceptance criteria:
-    - The manual draw trigger is replaced by a decentralized automation service (e.g., Chainlink Automation).
-    - Draws are automatically requested at the configured time interval.
-    - The lottery contract must be funded with sufficient currency (e.g., LINK/ETH) to pay for automation service fees.
-    - The system correctly handles cases where an upkeep check is skipped (e.g., no participants).
+  **Acceptance Criteria:**
+  - Given the lottery is open, when I send exactly the entry fee amount to enterRaffle(), then I am added to the current round's participants
+  - Given I send more than the entry fee, when I call enterRaffle(), then my transaction reverts with "Raffle__SendMoreToEnterRaffle"
+  - Given I send less than the entry fee, when I call enterRaffle(), then my transaction reverts with "Raffle__SendLessToEnterRaffle"
+  - Given I successfully enter, when the transaction completes, then an EnteredRaffle event is emitted with my address and entry fee
+  - Given the entry window has elapsed, when I attempt to enter, then my transaction reverts with "Raffle__RaffleNotOpen"
+  - Given I query the contract, when I check my entry status, then I can verify I'm included in the current round
 
-- US-007: Immutable lottery rules
-  Description: As a player, I want the lottery rules to be permanently fixed after deployment, so that I can trust the game conditions won't change.
-  Acceptance criteria:
-    - Entry fee amount cannot be modified after deployment.
-    - Draw interval cannot be changed after deployment.
-    - Any rule changes require deploying a completely new lottery contract.
-    - The immutable nature of rules is verifiable on the blockchain.
+- **US-003: Manual Draw Control**
 
-- US-008: Enhanced Security Protection
-  Description: As a player, I want my entry fees and winnings to be protected against theft and technical vulnerabilities, so that I can participate with confidence.
-  Acceptance criteria:
-    - Reentrancy guards are implemented on all critical fund-handling functions (e.g., enter, payout).
-    - The contract passes automated security analysis with a tool like Slither, with no medium or high-severity issues.
-    - Follows the checks-effects-interactions pattern to prevent reentrancy.
-    - Ownership of the contract is properly managed and restricted.
+  As a lottery operator,
+  I want to manually trigger draws during the development phase,
+  So that I can validate the complete lottery flow before implementing automation.
 
-- US-009: Comprehensive Monitoring
-  Description: As a lottery operator, I want to track all lottery activities and system health, so that I can ensure proper operation and maintain player trust.
-  Acceptance criteria:
-    - Player entry events log the `playerAddress` and `entryFee`.
-    - Draw request events log the `requestId` for tracking.
-    - Winner selection events log the `winnerAddress` and `prizeAmount`.
-    - All event parameters crucial for filtering are indexed.
+  **Acceptance Criteria:**
+  - Given the entry window has elapsed, when I call performDraw(), then a winner is selected from current participants
+  - Given there are no participants, when I trigger a draw, then the system resets for the next round without prize distribution
+  - Given a draw is triggered, when it completes, then a DrawRequested event is emitted with timestamp and participant count
+  - Given I am not the operator, when I attempt to trigger a draw, then the transaction reverts with "Raffle__NotOwner"
+  - Given the entry window is still active, when I attempt a draw, then the transaction reverts with "Raffle__RaffleNotReady"
+  - Given a winner is selected, when the draw completes, then winner selection uses block.timestamp % participants.length for pseudo-randomness
+
+- **US-004: Automatic Prize Distribution**
+
+  As a lottery winner,
+  I want to automatically receive the entire prize pool when selected,
+  So that I get my winnings immediately without additional steps.
+
+  **Acceptance Criteria:**
+  - Given I am selected as winner, when the draw completes, then I receive 100% of all collected entry fees
+  - Given the prize transfer, when it executes, then it uses the call method for secure ETH transfer
+  - Given I am the winner, when prize distribution occurs, then a WinnerPicked event is emitted with my address and prize amount
+  - Given the prize is distributed, when the transaction completes, then a new lottery round starts automatically with reset participants
+  - Given the prize transfer fails, when the payout is attempted, then the transaction reverts and the lottery state remains unchanged
+
+- **US-005: Integrate Chainlink VRF**
+
+  As a player,
+  I want winner selection to use provably fair and tamper-proof randomness,
+  So that I can trust the outcome is not manipulated by the operator.
+
+  **Acceptance Criteria:**
+  - Given a draw is triggered, when performDraw() is called, then it requests randomness from Chainlink VRF v2
+  - Given the VRF request is made, when it's submitted, then a RandomnessRequested event is emitted with requestId
+  - Given the VRF responds, when fulfillRandomWords() is called, then the winner is selected using the random number
+  - Given the VRF subscription lacks funds, when a draw is attempted, then the transaction reverts with "Raffle__InsufficientVRFFunds"
+  - Given the VRF request times out, when checked, then the contract maintains its current state until retry
+  - Given the random number is received, when winner selection occurs, then it uses randomResult % participants.length
+
+- **US-006: Automated Draw Scheduling**
+
+  As a player,
+  I want lottery draws to be triggered automatically at scheduled intervals,
+  So that I can be sure draws happen on time without operator dependency.
+
+  **Acceptance Criteria:**
+  - Given the contract is registered with Chainlink Automation, when the time interval elapses, then checkUpkeep() returns true if participants exist
+  - Given checkUpkeep() returns true, when Chainlink calls performUpkeep(), then a draw is automatically triggered
+  - Given there are no participants, when the time interval elapses, then checkUpkeep() returns false and no draw occurs
+  - Given the automation subscription lacks funds, when upkeep is needed, then the system pauses until refunded
+  - Given the upkeep is performed, when it completes, then the next interval timer resets automatically
+  - Given I check the contract, when I query, then I can see the next scheduled draw time
+
+- **US-007: Immutable Lottery Configuration**
+
+  As a player,
+  I want the lottery rules to be permanently fixed after deployment,
+  So that I can trust the game conditions won't change unexpectedly.
+
+  **Acceptance Criteria:**
+  - Given the contract is deployed, when I check the entry fee, then it is stored in an immutable variable that cannot be modified
+  - Given the contract is deployed, when I check the draw interval, then it is stored in an immutable variable that cannot be modified
+  - Given the contract exists, when I review the code, then there are no setter functions for entry fee or draw interval
+  - Given I want different rules, when I need changes, then I must deploy a completely new contract instance
+  - Given the contract is verified, when I check on Etherscan, then the immutable nature of parameters is visible in the code
+
+- **US-008: Enhanced Security Protection**
+
+  As a player,
+  I want my entry fees and winnings protected against theft and vulnerabilities,
+  So that I can participate with confidence in the lottery's security.
+
+  **Acceptance Criteria:**
+  - Given any payable function, when called, then it uses OpenZeppelin's ReentrancyGuard modifier
+  - Given the winner payout function, when executed, then it follows checks-effects-interactions pattern
+  - Given any state-changing function, when called recursively, then it reverts with "ReentrancyGuard: reentrant call"
+  - Given the contract code, when analyzed with Slither, then it passes with zero medium or high-severity issues
+  - Given ownership functions exist, when called, then only the designated owner can execute them
+  - Given the contract handles ETH, when transferring funds, then it uses secure transfer methods with proper error handling
+
+- **US-009: Comprehensive Event Logging**
+
+  As a lottery operator,
+  I want to track all lottery activities through detailed event logs,
+  So that I can monitor system health and maintain transparent operations.
+
+  **Acceptance Criteria:**
+  - Given a player enters the lottery, when the transaction succeeds, then an EnteredRaffle event is emitted with indexed playerAddress and entryFee
+  - Given a draw is requested, when the VRF call is made, then a RandomnessRequested event is emitted with indexed requestId and timestamp
+  - Given a winner is selected, when the draw completes, then a WinnerPicked event is emitted with indexed winnerAddress and prizeAmount
+  - Given any round completes, when it resets, then a RoundReset event is emitted with the new round number and timestamp
+  - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address, request ID, or winner
+  - Given I check event history, when I query the blockchain, then all lottery activities are permanently logged and auditable
 
 ## 7. Success metrics
 
