@@ -3,12 +3,14 @@
 # Default target
 help:
 	@echo "Available commands:"
-	@echo "  install       - Install dependencies"
-	@echo "  build         - Compile contracts"
-	@echo "  test          - Run tests"
-	@echo "  clean         - Clean build artifacts"
-	@echo "  deploy-sepolia - Deploy Raffle to Sepolia testnet"
-	@echo "  deploy-local - Deploy Raffle to local network"
+	@echo "  install       		- Install dependencies"
+	@echo "  build         		- Compile contracts"
+	@echo "  test          		- Run all tests"
+	@echo "  test-unit     		- Run unit tests"
+	@echo "  test-acceptance 	- Run acceptance tests"
+	@echo "  clean         		- Clean build artifacts"
+	@echo "  deploy-sepolia 	- Deploy Raffle to Sepolia testnet"
+	@echo "  deploy-local 		- Deploy Raffle to local network"
 
 # Install forge dependencies
 install:
@@ -19,8 +21,13 @@ build:
 	forge build
 
 # Run tests
-test:
-	forge test
+test: test-unit test-acceptance
+
+test-acceptance:
+	forge test test/acceptance/* --fork-url local -vvv
+
+test-unit:
+	forge test test/unit/*
 
 # Clean build artifacts
 clean:
