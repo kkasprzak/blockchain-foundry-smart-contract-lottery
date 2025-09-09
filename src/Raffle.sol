@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-contract Raffle {
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+
+contract Raffle is VRFConsumerBaseV2Plus {
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     address payable[] private s_players;
@@ -21,7 +23,7 @@ contract Raffle {
     error Raffle__InvalidInterval();
     error Raffle__PlayerIsAlreadyInRaffle();
 
-    constructor(uint256 entranceFee, uint256 interval) {
+    constructor(uint256 entranceFee, uint256 interval, address vrfCoordinator) VRFConsumerBaseV2Plus(vrfCoordinator) {
         if (entranceFee == 0) {
             revert Raffle__InvalidEntranceFee();
         }
@@ -91,6 +93,8 @@ contract Raffle {
     function isPlayerInRaffle(address player) public view returns (bool) {
         return s_playersInRaffle[player];
     }
+
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual override {}
 
     function _resetRaffleForNextRound() private {
         for (uint256 i = 0; i < s_players.length; i++) {

@@ -1,16 +1,25 @@
 .PHONY: help install build test clean deploy-sepolia deploy-local
 
-# Default target
+# Default target - show help when no target specified
 help:
-	@echo "Available commands:"
-	@echo "  install       		- Install dependencies"
-	@echo "  build         		- Compile contracts"
-	@echo "  test          		- Run all tests"
-	@echo "  test-unit     		- Run unit tests"
-	@echo "  test-acceptance 	- Run acceptance tests"
-	@echo "  clean         		- Clean build artifacts"
-	@echo "  deploy-sepolia 	- Deploy Raffle to Sepolia testnet"
-	@echo "  deploy-local 		- Deploy Raffle to local network"
+	@echo "Foundry Smart Contract Lottery - Available Commands"
+	@echo "=================================================="
+	@echo ""
+	@echo "Development Commands:"
+	@echo "  install          Install forge dependencies"
+	@echo "  build            Compile all contracts"
+	@echo "  clean            Clean build artifacts"
+	@echo ""
+	@echo "Testing Commands:"
+	@echo "  test             Run all tests"
+	@echo ""
+	@echo "Deployment Commands:"
+	@echo "  deploy-local     Deploy to local network (anvil)"
+	@echo "  deploy-sepolia   Deploy to Sepolia testnet"
+	@echo ""
+	@echo "Usage Examples:"
+	@echo "  make test                         # Quick testing during development"
+	@echo "  make deploy-local                 # Test deployment locally"
 
 # Install forge dependencies
 install:
@@ -21,13 +30,8 @@ build:
 	forge build
 
 # Run tests
-test: test-unit test-acceptance
-
-test-acceptance:
-	forge test test/acceptance/* --fork-url local -vvv
-
-test-unit:
-	forge test test/unit/*
+test:
+	forge test
 
 # Clean build artifacts
 clean:

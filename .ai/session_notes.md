@@ -1,3 +1,32 @@
+# Session Notes - September 09, 2025
+
+## Feature Summary
+
+Implementing US-005: Integrate Chainlink VRF for provably fair and tamper-proof winner selection in the raffle contract. Replacing the current weak pseudo-randomness with Chainlink VRF v2.5 to ensure trustworthy and verifiable winner selection that cannot be manipulated by operators.
+
+## Current Status
+
+• ✅ Chainlink contracts dependency installed with proper foundry.toml remappings
+• ✅ Raffle contract updated to inherit from VRFConsumerBaseV2Plus 
+• ✅ Constructor modified to accept vrfCoordinator parameter
+• ✅ Empty fulfillRandomWords() override function created as placeholder
+• ✅ Unit tests updated to handle new constructor signature with address(0) mock coordinator
+
+## Next Tasks
+
+• Implement performDraw() function to request VRF randomness (immediate priority)
+• Add VRF configuration variables (subscription ID, key hash, gas limit, confirmations)
+• Complete fulfillRandomWords() implementation for winner selection using modular arithmetic
+• Research and implement VRF mocking strategy for unit tests (testing challenge identified)
+• Add RandomnessRequested event and Raffle__InsufficientVRFFunds error handling
+
+## Important Reminders
+
+• Unit testing VRF integration requires mocking strategy research - Navigator identified this as unknown territory
+• Follow TDD principles: write failing tests first, then implement minimal functionality
+
+---
+
 # Session Notes - September 04, 2025
 
 ## Feature Summary

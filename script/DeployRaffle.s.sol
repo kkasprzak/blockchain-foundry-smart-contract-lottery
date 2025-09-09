@@ -17,7 +17,7 @@ contract DeployRaffle is Script {
     function deployRaffle(uint256 entranceFee, uint256 interval) public returns (Raffle) {
         vm.startBroadcast();
 
-        Raffle raffle = new Raffle(entranceFee, interval);
+        Raffle raffle = new Raffle(entranceFee, interval, address(0));
 
         vm.stopBroadcast();
 

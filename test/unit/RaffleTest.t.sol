@@ -26,7 +26,7 @@ contract RaffleTest is Test {
         uint256 validInterval = 1;
 
         vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
-        new Raffle(invalidEntranceFee, validInterval);
+        new Raffle(invalidEntranceFee, validInterval, address(0));
     }
 
     function test_RaffleRevertsWithInvalidInterval() public {
@@ -34,7 +34,7 @@ contract RaffleTest is Test {
         uint256 invalidInterval = 0;
 
         vm.expectRevert(Raffle.Raffle__InvalidInterval.selector);
-        new Raffle(validEntranceFee, invalidInterval);
+        new Raffle(validEntranceFee, invalidInterval, address(0));
     }
 
     function test_RaffleRevertsWhenYouDontPayEnough() public {
@@ -308,19 +308,19 @@ contract RaffleTest is Test {
     }
 
     function _createValidRaffle() private returns (Raffle) {
-        return new Raffle(1 ether, 1);
+        return new Raffle(1 ether, 1, address(0));
     }
 
     function _createRaffleWithInterval(uint256 interval) private returns (Raffle) {
-        return new Raffle(1 ether, interval);
+        return new Raffle(1 ether, interval, address(0));
     }
 
     function _createRaffleWithEntranceFee(uint256 entranceFee) private returns (Raffle) {
-        return new Raffle(entranceFee, 1);
+        return new Raffle(entranceFee, 1, address(0));
     }
 
     function _createRaffleWithEntranceFeeAndInterval(uint256 entranceFee, uint256 interval) private returns (Raffle) {
-        return new Raffle(entranceFee, interval);
+        return new Raffle(entranceFee, interval, address(0));
     }
 
     function _waitForDrawTime(uint256 timeToWait) private {
