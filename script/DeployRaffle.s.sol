@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployRaffle is Script {
     uint256 public constant DEFAULT_ENTRANCE_FEE = 0.01 ether;
@@ -17,7 +18,7 @@ contract DeployRaffle is Script {
     function deployRaffle(uint256 entranceFee, uint256 interval) public returns (Raffle) {
         vm.startBroadcast();
 
-        Raffle raffle = new Raffle(entranceFee, interval, address(0));
+        Raffle raffle = new Raffle(entranceFee, interval, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
 
         vm.stopBroadcast();
 

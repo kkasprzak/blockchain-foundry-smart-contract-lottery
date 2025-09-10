@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Raffle} from "../../src/Raffle.sol";
+import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
     event RaffleEntered(address indexed player);
@@ -24,17 +25,19 @@ contract RaffleTest is Test {
     function test_RaffleRevertsWithInvalidEntranceFee() public {
         uint256 invalidEntranceFee = 0;
         uint256 validInterval = 1;
+        address vrfCoordinator = new HelperConfig().getActiveNetworkConfig().vrfCoordinator;
 
         vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
-        new Raffle(invalidEntranceFee, validInterval, address(0));
+        new Raffle(invalidEntranceFee, validInterval, vrfCoordinator);
     }
 
     function test_RaffleRevertsWithInvalidInterval() public {
         uint256 validEntranceFee = 0.01 ether;
         uint256 invalidInterval = 0;
+        address vrfCoordinator = new HelperConfig().getActiveNetworkConfig().vrfCoordinator;
 
         vm.expectRevert(Raffle.Raffle__InvalidInterval.selector);
-        new Raffle(validEntranceFee, invalidInterval, address(0));
+        new Raffle(validEntranceFee, invalidInterval, vrfCoordinator);
     }
 
     function test_RaffleRevertsWhenYouDontPayEnough() public {
@@ -308,19 +311,19 @@ contract RaffleTest is Test {
     }
 
     function _createValidRaffle() private returns (Raffle) {
-        return new Raffle(1 ether, 1, address(0));
+        return new Raffle(1 ether, 1, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
     }
 
     function _createRaffleWithInterval(uint256 interval) private returns (Raffle) {
-        return new Raffle(1 ether, interval, address(0));
+        return new Raffle(1 ether, interval, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
     }
 
     function _createRaffleWithEntranceFee(uint256 entranceFee) private returns (Raffle) {
-        return new Raffle(entranceFee, 1, address(0));
+        return new Raffle(entranceFee, 1, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
     }
 
     function _createRaffleWithEntranceFeeAndInterval(uint256 entranceFee, uint256 interval) private returns (Raffle) {
-        return new Raffle(entranceFee, interval, address(0));
+        return new Raffle(entranceFee, interval, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
     }
 
     function _waitForDrawTime(uint256 timeToWait) private {
