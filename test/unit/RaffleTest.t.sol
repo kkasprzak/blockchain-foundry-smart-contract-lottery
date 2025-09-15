@@ -4,11 +4,23 @@ pragma solidity ^0.8.19;
 import {Test, console} from "forge-std/Test.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
+
+    HelperConfig.NetworkConfig private _networkConfig;
+    VRFCoordinatorV2_5Mock private _vrfCoordinatorMock;
+    uint256 private _subscriptionId;
+
+    function setUp() public {
+        _networkConfig = new HelperConfig().getActiveNetworkConfig();
+        _vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
+        _subscriptionId = _vrfCoordinatorMock.createSubscription();
+        _vrfCoordinatorMock.fundSubscription(_subscriptionId, 100000000000000000000);
+    }
 
     function test_RaffleInitializes() public {
         Raffle raffle = _createValidRaffle();
@@ -25,19 +37,31 @@ contract RaffleTest is Test {
     function test_RaffleRevertsWithInvalidEntranceFee() public {
         uint256 invalidEntranceFee = 0;
         uint256 validInterval = 1;
-        address vrfCoordinator = new HelperConfig().getActiveNetworkConfig().vrfCoordinator;
 
         vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
-        new Raffle(invalidEntranceFee, validInterval, vrfCoordinator);
+        new Raffle(
+            invalidEntranceFee,
+            validInterval,
+            address(_vrfCoordinatorMock),
+            _networkConfig.keyHash,
+            _subscriptionId,
+            _networkConfig.callbackGasLimit
+        );
     }
 
     function test_RaffleRevertsWithInvalidInterval() public {
         uint256 validEntranceFee = 0.01 ether;
         uint256 invalidInterval = 0;
-        address vrfCoordinator = new HelperConfig().getActiveNetworkConfig().vrfCoordinator;
 
         vm.expectRevert(Raffle.Raffle__InvalidInterval.selector);
-        new Raffle(validEntranceFee, invalidInterval, vrfCoordinator);
+        new Raffle(
+            validEntranceFee,
+            invalidInterval,
+            address(_vrfCoordinatorMock),
+            _networkConfig.keyHash,
+            _subscriptionId,
+            _networkConfig.callbackGasLimit
+        );
     }
 
     function test_RaffleRevertsWhenYouDontPayEnough() public {
@@ -311,19 +335,30 @@ contract RaffleTest is Test {
     }
 
     function _createValidRaffle() private returns (Raffle) {
-        return new Raffle(1 ether, 1, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
+        return _createRaffleWithEntranceFeeAndInterval(1 ether, 1);
     }
 
     function _createRaffleWithInterval(uint256 interval) private returns (Raffle) {
-        return new Raffle(1 ether, interval, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
+        return _createRaffleWithEntranceFeeAndInterval(1 ether, interval);
     }
 
     function _createRaffleWithEntranceFee(uint256 entranceFee) private returns (Raffle) {
-        return new Raffle(entranceFee, 1, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
+        return _createRaffleWithEntranceFeeAndInterval(entranceFee, 1);
     }
 
     function _createRaffleWithEntranceFeeAndInterval(uint256 entranceFee, uint256 interval) private returns (Raffle) {
-        return new Raffle(entranceFee, interval, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
+        Raffle raffle = new Raffle(
+            entranceFee,
+            interval,
+            address(_vrfCoordinatorMock),
+            _networkConfig.keyHash,
+            _subscriptionId,
+            _networkConfig.callbackGasLimit
+        );
+
+        _vrfCoordinatorMock.addConsumer(_subscriptionId, address(raffle));
+
+        return raffle;
     }
 
     function _waitForDrawTime(uint256 timeToWait) private {

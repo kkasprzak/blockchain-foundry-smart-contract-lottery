@@ -2,14 +2,21 @@
 pragma solidity ^0.8.19;
 
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 contract Raffle is VRFConsumerBaseV2Plus {
+    uint16 private constant REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant NUM_WORDS = 1;
+
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     address payable[] private s_players;
     mapping(address => bool) private s_playersInRaffle;
     uint256 private s_lastTimeStamp;
     address private immutable i_operator;
+    bytes32 private immutable i_keyHash;
+    uint256 private immutable i_subscriptionId;
+    uint32 private immutable i_callbackGasLimit;
 
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
@@ -23,7 +30,14 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle__InvalidInterval();
     error Raffle__PlayerIsAlreadyInRaffle();
 
-    constructor(uint256 entranceFee, uint256 interval, address vrfCoordinator) VRFConsumerBaseV2Plus(vrfCoordinator) {
+    constructor(
+        uint256 entranceFee,
+        uint256 interval,
+        address vrfCoordinator,
+        bytes32 keyHash,
+        uint256 subscriptionId,
+        uint32 callbackGasLimit
+    ) VRFConsumerBaseV2Plus(vrfCoordinator) {
         if (entranceFee == 0) {
             revert Raffle__InvalidEntranceFee();
         }
@@ -36,6 +50,9 @@ contract Raffle is VRFConsumerBaseV2Plus {
         i_interval = interval;
         s_lastTimeStamp = block.timestamp;
         i_operator = msg.sender;
+        i_keyHash = keyHash;
+        i_subscriptionId = subscriptionId;
+        i_callbackGasLimit = callbackGasLimit;
     }
 
     function enterRaffle() external payable {
@@ -109,7 +126,19 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_playersInRaffle[player] = true;
     }
 
-    function _getRandomWinnerIndex() private view returns (uint256) {
+    function _getRandomWinnerIndex() private returns (uint256) {
+        uint256 requestId;
+        VRFV2PlusClient.RandomWordsRequest memory req = VRFV2PlusClient.RandomWordsRequest({
+            keyHash: i_keyHash,
+            subId: i_subscriptionId,
+            requestConfirmations: REQUEST_CONFIRMATIONS,
+            callbackGasLimit: i_callbackGasLimit,
+            numWords: NUM_WORDS,
+            extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
+        });
+
+        requestId = s_vrfCoordinator.requestRandomWords(req);
+
         return uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % s_players.length;
     }
 

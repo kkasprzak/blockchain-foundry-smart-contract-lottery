@@ -16,9 +16,18 @@ contract DeployRaffle is Script {
     }
 
     function deployRaffle(uint256 entranceFee, uint256 interval) public returns (Raffle) {
+        HelperConfig.NetworkConfig memory networkConfig = new HelperConfig().getActiveNetworkConfig();
+
         vm.startBroadcast();
 
-        Raffle raffle = new Raffle(entranceFee, interval, new HelperConfig().getActiveNetworkConfig().vrfCoordinator);
+        Raffle raffle = new Raffle(
+            entranceFee,
+            interval,
+            networkConfig.vrfCoordinator,
+            networkConfig.keyHash,
+            networkConfig.subscriptionId,
+            networkConfig.callbackGasLimit
+        );
 
         vm.stopBroadcast();
 
