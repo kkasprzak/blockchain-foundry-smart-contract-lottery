@@ -11,15 +11,15 @@ contract RaffleTest is Test {
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
 
-    HelperConfig.NetworkConfig private _networkConfig;
-    VRFCoordinatorV2_5Mock private _vrfCoordinatorMock;
-    uint256 private _subscriptionId;
+    HelperConfig.NetworkConfig private s_networkConfig;
+    VRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
+    uint256 private s_subscriptionId;
 
     function setUp() public {
-        _networkConfig = new HelperConfig().getActiveNetworkConfig();
-        _vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
-        _subscriptionId = _vrfCoordinatorMock.createSubscription();
-        _vrfCoordinatorMock.fundSubscription(_subscriptionId, 100000000000000000000);
+        s_networkConfig = new HelperConfig().getActiveNetworkConfig();
+        s_vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
+        s_subscriptionId = s_vrfCoordinatorMock.createSubscription();
+        s_vrfCoordinatorMock.fundSubscription(s_subscriptionId, 100000000000000000000);
     }
 
     function test_RaffleInitializes() public {
@@ -42,10 +42,10 @@ contract RaffleTest is Test {
         new Raffle(
             invalidEntranceFee,
             validInterval,
-            address(_vrfCoordinatorMock),
-            _networkConfig.keyHash,
-            _subscriptionId,
-            _networkConfig.callbackGasLimit
+            address(s_vrfCoordinatorMock),
+            s_networkConfig.keyHash,
+            s_subscriptionId,
+            s_networkConfig.callbackGasLimit
         );
     }
 
@@ -57,10 +57,10 @@ contract RaffleTest is Test {
         new Raffle(
             validEntranceFee,
             invalidInterval,
-            address(_vrfCoordinatorMock),
-            _networkConfig.keyHash,
-            _subscriptionId,
-            _networkConfig.callbackGasLimit
+            address(s_vrfCoordinatorMock),
+            s_networkConfig.keyHash,
+            s_subscriptionId,
+            s_networkConfig.callbackGasLimit
         );
     }
 
@@ -350,13 +350,13 @@ contract RaffleTest is Test {
         Raffle raffle = new Raffle(
             entranceFee,
             interval,
-            address(_vrfCoordinatorMock),
-            _networkConfig.keyHash,
-            _subscriptionId,
-            _networkConfig.callbackGasLimit
+            address(s_vrfCoordinatorMock),
+            s_networkConfig.keyHash,
+            s_subscriptionId,
+            s_networkConfig.callbackGasLimit
         );
 
-        _vrfCoordinatorMock.addConsumer(_subscriptionId, address(raffle));
+        s_vrfCoordinatorMock.addConsumer(s_subscriptionId, address(raffle));
 
         return raffle;
     }

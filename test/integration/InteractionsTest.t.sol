@@ -9,7 +9,6 @@ import {RafflePickWinner} from "../../script/Interactions.s.sol";
 contract InteractionsTest is Test {
     Raffle raffle;
 
-    // Event declarations for testing
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
 
@@ -28,9 +27,9 @@ contract InteractionsTest is Test {
         vm.deal(player2, 1 ether);
         vm.deal(player3, 1 ether);
 
-        uint256 expectedPrizePool = entranceFee * 3;
+        uint256 entranceFees = entranceFee * 3;
+        uint256 expectedPrizePool = entranceFees + address(raffle).balance;
 
-        // Expect RaffleEntered events for each player
         vm.expectEmit(true, false, false, false, address(raffle));
         emit RaffleEntered(player1);
         vm.prank(player1);
@@ -46,24 +45,20 @@ contract InteractionsTest is Test {
         vm.prank(player3);
         raffle.enterRaffle{value: entranceFee}();
 
-        // Wait past the 300-second interval (5 minutes + 1 second to close entry window)
         vm.warp(block.timestamp + 301);
 
-        // Expect WinnerSelected event (can't predict exact winner, so check data only)
         vm.expectEmit(false, false, false, true, address(raffle));
         emit WinnerSelected(address(0), expectedPrizePool);
 
         RafflePickWinner rafflePickWinner = new RafflePickWinner();
         address winner = rafflePickWinner.pickWinner(address(raffle));
+        uint256 actualPrizeTransferred = address(winner).balance - (1 ether - entranceFee);
 
-        uint256 winnerFinalBalance = address(winner).balance;
-
-        // Assert - Multi-player validation
         assertTrue(winner == player1 || winner == player2 || winner == player3);
-        assertEq(winnerFinalBalance, 1 ether - entranceFee + expectedPrizePool);
-        assertEq(address(raffle).balance, 0); // Prize pool should be fully distributed
+        assertEq(actualPrizeTransferred, expectedPrizePool);
 
-        // Verify round reset
+        assertEq(address(raffle).balance, 0);
+
         assertFalse(raffle.isPlayerInRaffle(player1));
         assertFalse(raffle.isPlayerInRaffle(player2));
         assertFalse(raffle.isPlayerInRaffle(player3));

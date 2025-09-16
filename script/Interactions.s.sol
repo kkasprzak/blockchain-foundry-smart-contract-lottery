@@ -13,15 +13,15 @@ contract RafflePickWinner is Script {
             revert RafflePickWinner__InvalidContractAddress();
         }
 
-        console.log("Attempting to pick winner for raffle at:", contractAddress);
+        // console.log("Attempting to pick winner for raffle at:", contractAddress);
 
         vm.startBroadcast();
         address winner = Raffle(payable(contractAddress)).pickWinner();
         vm.stopBroadcast();
 
-        console.log("Winner selection completed");
-        console.log("Winner address:", winner);
-        console.log("Winner balance:", winner.balance);
+        // console.log("Winner selection completed");
+        // console.log("Winner address:", winner);
+        // console.log("Winner balance:", winner.balance);
 
         return winner;
     }
