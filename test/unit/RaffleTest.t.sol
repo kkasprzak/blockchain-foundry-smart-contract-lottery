@@ -3,20 +3,20 @@ pragma solidity ^0.8.19;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Raffle} from "../../src/Raffle.sol";
-import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
+    bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    uint32 private constant CALLBACK_GAS_LIMIT = 500000;
+
+    VRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
+    uint256 private s_subscriptionId;
+
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
 
-    HelperConfig.NetworkConfig private s_networkConfig;
-    VRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
-    uint256 private s_subscriptionId;
-
     function setUp() public {
-        s_networkConfig = new HelperConfig().getActiveNetworkConfig();
         s_vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
         s_subscriptionId = s_vrfCoordinatorMock.createSubscription();
         s_vrfCoordinatorMock.fundSubscription(s_subscriptionId, 100000000000000000000);
@@ -43,9 +43,9 @@ contract RaffleTest is Test {
             invalidEntranceFee,
             validInterval,
             address(s_vrfCoordinatorMock),
-            s_networkConfig.keyHash,
+            KEY_HASH,
             s_subscriptionId,
-            s_networkConfig.callbackGasLimit
+            CALLBACK_GAS_LIMIT
         );
     }
 
@@ -58,9 +58,9 @@ contract RaffleTest is Test {
             validEntranceFee,
             invalidInterval,
             address(s_vrfCoordinatorMock),
-            s_networkConfig.keyHash,
+            KEY_HASH,
             s_subscriptionId,
-            s_networkConfig.callbackGasLimit
+            CALLBACK_GAS_LIMIT
         );
     }
 
@@ -348,12 +348,7 @@ contract RaffleTest is Test {
 
     function _createRaffleWithEntranceFeeAndInterval(uint256 entranceFee, uint256 interval) private returns (Raffle) {
         Raffle raffle = new Raffle(
-            entranceFee,
-            interval,
-            address(s_vrfCoordinatorMock),
-            s_networkConfig.keyHash,
-            s_subscriptionId,
-            s_networkConfig.callbackGasLimit
+            entranceFee, interval, address(s_vrfCoordinatorMock), KEY_HASH, s_subscriptionId, CALLBACK_GAS_LIMIT
         );
 
         s_vrfCoordinatorMock.addConsumer(s_subscriptionId, address(raffle));
