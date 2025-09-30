@@ -45,4 +45,5 @@ deploy-sepolia:
 # Deploy to local network
 deploy-local:
 	@echo "Deploying Raffle to local network..."
-	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url local --broadcast --account localKey
+	@cast rpc anvil_mine 20 --rpc-url local > /dev/null 2>&1 || true
+	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url local --broadcast --account localKey -vvvv

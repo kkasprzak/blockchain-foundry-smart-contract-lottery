@@ -12,11 +12,11 @@ contract DeployRaffle is Script {
 
     function setUp() public {}
 
-    function run() public returns (Raffle) {
+    function run() public returns (Raffle, HelperConfig) {
         return deployRaffle(DEFAULT_ENTRANCE_FEE, DEFAULT_INTERVAL);
     }
 
-    function deployRaffle(uint256 entranceFee, uint256 interval) public returns (Raffle) {
+    function deployRaffle(uint256 entranceFee, uint256 interval) public returns (Raffle, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
         NetworkConfig networkConfig = helperConfig.networkConfig();
 
@@ -26,6 +26,6 @@ contract DeployRaffle is Script {
         console.log("Entrance Fee:", entranceFee);
         console.log("Interval:", interval);
 
-        return raffle;
+        return (raffle, helperConfig);
     }
 }

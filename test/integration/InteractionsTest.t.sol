@@ -14,7 +14,7 @@ contract InteractionsTest is Test {
 
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
-        raffle = deployRaffle.run();
+        (raffle,) = deployRaffle.run();
     }
 
     function test_MultiPlayerScenario() public {

@@ -3,13 +3,13 @@ pragma solidity ^0.8.19;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Raffle} from "../../src/Raffle.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {MyVRFCoordinatorV2_5Mock} from "../mocks/MyVRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
     bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 private constant CALLBACK_GAS_LIMIT = 500000;
 
-    VRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
+    MyVRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
     uint256 private s_subscriptionId;
 
     event RaffleEntered(address indexed player);
@@ -17,8 +17,8 @@ contract RaffleTest is Test {
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
 
     function setUp() public {
-        s_vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
-        s_subscriptionId = s_vrfCoordinatorMock.createSubscription();
+        s_vrfCoordinatorMock = new MyVRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
+        s_subscriptionId = s_vrfCoordinatorMock.deterministicCreateSubscription();
         s_vrfCoordinatorMock.fundSubscription(s_subscriptionId, 100000000000000000000);
     }
 

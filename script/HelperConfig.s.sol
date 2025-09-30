@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Script} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {MyVRFCoordinatorV2_5Mock} from "../test/mocks/MyVRFCoordinatorV2_5Mock.sol";
+import {AddConsumer} from "./Interactions.s.sol";
 
 abstract contract NetworkConfig is Script {
     function deployRaffle(uint256 entranceFee, uint256 interval) external virtual returns (Raffle);
@@ -14,14 +15,13 @@ contract AnvilNetworkConfig is NetworkConfig {
         vm.startBroadcast();
 
         // Create VRF Coordinator Mock
-        VRFCoordinatorV2_5Mock vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(
-            100000000000000000, // Base fee
-            1000000000, // Gas price link
-            5300000000000000 // Wei per unit link
+        MyVRFCoordinatorV2_5Mock vrfCoordinatorMock = new MyVRFCoordinatorV2_5Mock(
+            0.002 ether, // Base fee: 0.1 LINK
+            40 gwei, // Gas price link: 1 gwei
+            0.004 ether // Wei per unit link: 4000000000000000000 (4e18)
         );
 
-        // Create and fund subscription
-        uint256 subscriptionId = vrfCoordinatorMock.createSubscription();
+        uint256 subscriptionId = vrfCoordinatorMock.deterministicCreateSubscription();
         vrfCoordinatorMock.fundSubscription(subscriptionId, 100000000000000000000);
 
         // Deploy Raffle contract
@@ -34,7 +34,6 @@ contract AnvilNetworkConfig is NetworkConfig {
             500000 // Callback gas limit
         );
 
-        // Add Raffle as consumer to VRF subscription
         vrfCoordinatorMock.addConsumer(subscriptionId, address(raffle));
 
         vm.stopBroadcast();
