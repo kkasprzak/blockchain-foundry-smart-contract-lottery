@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {MyVRFCoordinatorV2_5Mock} from "../mocks/MyVRFCoordinatorV2_5Mock.sol";
 
@@ -74,6 +75,26 @@ contract RaffleTest is Test {
 
         vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
         _enterRaffleAsPlayer(raffle, player, insufficientPayment);
+    }
+
+    function test_RaffleRevertsWhenEnteringDuringDrawTime() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        raffle.pickWinner();
+
+        vm.expectRevert(Raffle.Raffle__DrawingInProgress.selector);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
     }
 
     function test_RaffleAllowsUserToEnterWithEnoughFee() public {
@@ -184,9 +205,12 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
 
-        address winner = raffle.pickWinner();
+        raffle.pickWinner();
 
-        assertTrue(winner == player1 || winner == player2);
+        vm.recordLogs();
+        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
+
+        assertEq(_raffleWinner(), player2);
     }
 
     function test_PickWinnerTransfersPrizeToWinner() public {
@@ -209,10 +233,12 @@ contract RaffleTest is Test {
 
         uint256 totalPrizePool = entranceFee * 3;
 
-        address winner = raffle.pickWinner();
+        raffle.pickWinner();
         uint256 expectedWinnerBalance = 1 ether - entranceFee + totalPrizePool;
 
-        assertEq(winner.balance, expectedWinnerBalance);
+        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
+
+        assertEq(player2.balance, expectedWinnerBalance);
     }
 
     function test_PickWinnerEmitsWinnerSelectedEvent() public {
@@ -228,10 +254,12 @@ contract RaffleTest is Test {
 
         uint256 expectedPrizeAmount = entranceFee;
 
+        raffle.pickWinner();
+
         vm.expectEmit(true, false, false, true, address(raffle));
         emit WinnerSelected(player, expectedPrizeAmount);
 
-        raffle.pickWinner();
+        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
     }
 
     function test_PickWinnerClearsParticipantsForNextRound() public {
@@ -253,6 +281,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         raffle.pickWinner();
+        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
 
         assertFalse(raffle.isPlayerInRaffle(player1));
         assertFalse(raffle.isPlayerInRaffle(player2));
@@ -272,6 +301,7 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
         raffle.pickWinner();
+        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
 
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
 
@@ -289,9 +319,8 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
 
-        address winner = raffle.pickWinner();
+        raffle.pickWinner();
 
-        assertEq(winner, address(0));
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         assertTrue(raffle.isPlayerInRaffle(player));
     }
@@ -310,6 +339,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         raffle.pickWinner();
+        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
 
         assertFalse(raffle.isPlayerInRaffle(address(maliciousWinner)));
     }
@@ -328,10 +358,12 @@ contract RaffleTest is Test {
 
         uint256 expectedPrizeAmount = entranceFee;
 
+        raffle.pickWinner();
+
         vm.expectEmit(true, false, false, true, address(raffle));
         emit PrizeTransferFailed(address(maliciousWinner), expectedPrizeAmount);
 
-        raffle.pickWinner();
+        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
     }
 
     function _createValidRaffle() private returns (Raffle) {
@@ -367,6 +399,17 @@ contract RaffleTest is Test {
 
     function _fundPlayerForRaffle(address player, uint256 amount) private {
         vm.deal(player, amount);
+    }
+
+    function _simulateVRFCoordinatorCallback(uint256 requestId, address raffleAddress, uint256 randomWord) private {
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = randomWord;
+        s_vrfCoordinatorMock.fulfillRandomWordsWithOverride(requestId, raffleAddress, randomWords);
+    }
+
+    function _raffleWinner() private returns (address) {
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        return address(uint160(uint256(entries[0].topics[1])));
     }
 }
 
