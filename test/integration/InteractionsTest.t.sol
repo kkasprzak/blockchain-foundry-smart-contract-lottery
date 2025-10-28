@@ -2,19 +2,23 @@
 pragma solidity ^0.8.19;
 
 import {Test, console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {RafflePickWinner} from "../../script/Interactions.s.sol";
+import {MyVRFCoordinatorV2_5Mock} from "../mocks/MyVRFCoordinatorV2_5Mock.sol";
 
 contract InteractionsTest is Test {
     Raffle raffle;
+    MyVRFCoordinatorV2_5Mock myVRFCoordinatorV2_5Mock;
 
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
 
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
-        (raffle,) = deployRaffle.run();
+        raffle = deployRaffle.run();
+        myVRFCoordinatorV2_5Mock = MyVRFCoordinatorV2_5Mock(address(raffle.s_vrfCoordinator()));
     }
 
     function test_MultiPlayerScenario() public {
@@ -47,20 +51,30 @@ contract InteractionsTest is Test {
 
         vm.warp(block.timestamp + 301);
 
-        // vm.expectEmit(false, false, false, true, address(raffle));
-        // emit WinnerSelected(address(0), expectedPrizePool);
+        RafflePickWinner rafflePickWinner = new RafflePickWinner();
+        rafflePickWinner.pickWinner(address(raffle));
 
-        // RafflePickWinner rafflePickWinner = new RafflePickWinner();
-        // address winner = rafflePickWinner.pickWinner(address(raffle));
-        // uint256 actualPrizeTransferred = address(winner).balance - (1 ether - entranceFee);
+        vm.expectEmit(false, false, false, true, address(raffle));
+        emit WinnerSelected(address(0), expectedPrizePool);
 
-        // assertTrue(winner == player1 || winner == player2 || winner == player3);
-        // assertEq(actualPrizeTransferred, expectedPrizePool);
+        vm.recordLogs();
+        myVRFCoordinatorV2_5Mock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
 
-        // assertEq(address(raffle).balance, 0);
+        address winner = _raffleWinner();
+        uint256 actualPrizeTransferred = address(winner).balance - (1 ether - entranceFee);
 
-        // assertFalse(raffle.isPlayerInRaffle(player1));
-        // assertFalse(raffle.isPlayerInRaffle(player2));
-        // assertFalse(raffle.isPlayerInRaffle(player3));
+        assertTrue(winner == player2);
+        assertEq(actualPrizeTransferred, expectedPrizePool);
+        assertEq(address(raffle).balance, 0);
+
+        assertFalse(raffle.isPlayerInRaffle(player1));
+        assertFalse(raffle.isPlayerInRaffle(player2));
+        assertFalse(raffle.isPlayerInRaffle(player3));
+    }
+
+    //TODO: Move to a test helper function avoiding duplication in the tests
+    function _raffleWinner() private returns (address) {
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        return address(uint160(uint256(entries[0].topics[1])));
     }
 }

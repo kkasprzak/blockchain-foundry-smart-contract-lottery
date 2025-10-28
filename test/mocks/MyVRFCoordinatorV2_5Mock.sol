@@ -45,4 +45,11 @@ contract MyVRFCoordinatorV2_5Mock is VRFCoordinatorV2_5Mock {
         emit SubscriptionCreated(subId, msg.sender);
         return subId;
     }
+
+    function simulateVRFCoordinatorCallback(uint256 requestId, address raffleAddress, uint256 randomWord) external {
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = randomWord;
+
+        fulfillRandomWordsWithOverride(requestId, raffleAddress, randomWords);
+    }
 }

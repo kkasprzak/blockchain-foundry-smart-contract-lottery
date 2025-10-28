@@ -208,7 +208,7 @@ contract RaffleTest is Test {
         raffle.pickWinner();
 
         vm.recordLogs();
-        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
 
         assertEq(_raffleWinner(), player2);
     }
@@ -236,7 +236,7 @@ contract RaffleTest is Test {
         raffle.pickWinner();
         uint256 expectedWinnerBalance = 1 ether - entranceFee + totalPrizePool;
 
-        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
 
         assertEq(player2.balance, expectedWinnerBalance);
     }
@@ -259,7 +259,7 @@ contract RaffleTest is Test {
         vm.expectEmit(true, false, false, true, address(raffle));
         emit WinnerSelected(player, expectedPrizeAmount);
 
-        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
     }
 
     function test_PickWinnerClearsParticipantsForNextRound() public {
@@ -281,7 +281,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         raffle.pickWinner();
-        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
 
         assertFalse(raffle.isPlayerInRaffle(player1));
         assertFalse(raffle.isPlayerInRaffle(player2));
@@ -301,7 +301,7 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
         raffle.pickWinner();
-        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
 
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
 
@@ -339,7 +339,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         raffle.pickWinner();
-        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
 
         assertFalse(raffle.isPlayerInRaffle(address(maliciousWinner)));
     }
@@ -363,7 +363,7 @@ contract RaffleTest is Test {
         vm.expectEmit(true, false, false, true, address(raffle));
         emit PrizeTransferFailed(address(maliciousWinner), expectedPrizeAmount);
 
-        _simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 0);
     }
 
     function _createValidRaffle() private returns (Raffle) {
@@ -399,12 +399,6 @@ contract RaffleTest is Test {
 
     function _fundPlayerForRaffle(address player, uint256 amount) private {
         vm.deal(player, amount);
-    }
-
-    function _simulateVRFCoordinatorCallback(uint256 requestId, address raffleAddress, uint256 randomWord) private {
-        uint256[] memory randomWords = new uint256[](1);
-        randomWords[0] = randomWord;
-        s_vrfCoordinatorMock.fulfillRandomWordsWithOverride(requestId, raffleAddress, randomWords);
     }
 
     function _raffleWinner() private returns (address) {
