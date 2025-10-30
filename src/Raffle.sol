@@ -23,7 +23,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     uint256 private immutable i_subscriptionId;
     uint32 private immutable i_callbackGasLimit;
 
-    uint256 public s_requestId;
+    uint256 private s_requestId;
     RaffleState private s_raffleState;
 
     event RaffleEntered(address indexed player);

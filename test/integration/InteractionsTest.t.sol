@@ -54,14 +54,16 @@ contract InteractionsTest is Test {
 
         vm.warp(block.timestamp + 301);
 
+        vm.recordLogs();
         RafflePickWinner rafflePickWinner = new RafflePickWinner();
         rafflePickWinner.pickWinner(address(raffle));
 
         vm.expectEmit(false, false, false, true, address(raffle));
         emit WinnerSelected(address(0), expectedPrizePool);
 
-        vm.recordLogs();
-        myVRFCoordinatorV2_5Mock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
+        myVRFCoordinatorV2_5Mock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1
+        );
 
         address winner = vm.getRecordedLogs().getWinner();
         uint256 actualPrizeTransferred = address(winner).balance - (1 ether - entranceFee);

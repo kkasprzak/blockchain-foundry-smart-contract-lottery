@@ -7,4 +7,8 @@ library LogHelpers {
     function getWinner(Vm.Log[] memory logs) internal pure returns (address) {
         return address(uint160(uint256(logs[0].topics[1])));
     }
+
+    function getVrfRequestId(Vm.Log[] memory logs) internal pure returns (uint256) {
+        return abi.decode(logs[0].data, (uint256));
+    }
 }
