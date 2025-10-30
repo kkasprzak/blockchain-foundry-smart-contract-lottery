@@ -2,9 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
-import {
-    EnumerableSet
-} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.7.3/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from
+    "lib/chainlink-brownie-contracts/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.7.3/contracts/utils/structs/EnumerableSet.sol";
 
 contract MyVRFCoordinatorV2_5Mock is VRFCoordinatorV2_5Mock {
     using EnumerableSet for EnumerableSet.UintSet;

@@ -5,8 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {MyVRFCoordinatorV2_5Mock} from "../mocks/MyVRFCoordinatorV2_5Mock.sol";
+import {LogHelpers} from "../helpers/LogHelpers.sol";
 
 contract RaffleTest is Test {
+    using LogHelpers for Vm.Log[];
+
     bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 private constant CALLBACK_GAS_LIMIT = 500000;
 
@@ -210,7 +213,7 @@ contract RaffleTest is Test {
         vm.recordLogs();
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
 
-        assertEq(_raffleWinner(), player2);
+        assertEq(vm.getRecordedLogs().getWinner(), player2);
     }
 
     function test_PickWinnerTransfersPrizeToWinner() public {
@@ -399,11 +402,6 @@ contract RaffleTest is Test {
 
     function _fundPlayerForRaffle(address player, uint256 amount) private {
         vm.deal(player, amount);
-    }
-
-    function _raffleWinner() private returns (address) {
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        return address(uint160(uint256(entries[0].topics[1])));
     }
 }
 

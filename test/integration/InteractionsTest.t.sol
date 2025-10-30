@@ -7,8 +7,11 @@ import {Raffle} from "../../src/Raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {RafflePickWinner} from "../../script/Interactions.s.sol";
 import {MyVRFCoordinatorV2_5Mock} from "../mocks/MyVRFCoordinatorV2_5Mock.sol";
+import {LogHelpers} from "../helpers/LogHelpers.sol";
 
 contract InteractionsTest is Test {
+    using LogHelpers for Vm.Log[];
+
     Raffle raffle;
     MyVRFCoordinatorV2_5Mock myVRFCoordinatorV2_5Mock;
 
@@ -60,7 +63,7 @@ contract InteractionsTest is Test {
         vm.recordLogs();
         myVRFCoordinatorV2_5Mock.simulateVRFCoordinatorCallback(raffle.s_requestId(), address(raffle), 1);
 
-        address winner = _raffleWinner();
+        address winner = vm.getRecordedLogs().getWinner();
         uint256 actualPrizeTransferred = address(winner).balance - (1 ether - entranceFee);
 
         assertTrue(winner == player2);
@@ -70,11 +73,5 @@ contract InteractionsTest is Test {
         assertFalse(raffle.isPlayerInRaffle(player1));
         assertFalse(raffle.isPlayerInRaffle(player2));
         assertFalse(raffle.isPlayerInRaffle(player3));
-    }
-
-    //TODO: Move to a test helper function avoiding duplication in the tests
-    function _raffleWinner() private returns (address) {
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        return address(uint160(uint256(entries[0].topics[1])));
     }
 }
