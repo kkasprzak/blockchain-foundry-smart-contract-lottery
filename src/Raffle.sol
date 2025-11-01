@@ -167,10 +167,6 @@ contract Raffle is VRFConsumerBaseV2Plus {
         return s_vrfCoordinator.requestRandomWords(req);
     }
 
-    function _getRandomWinnerIndex() private view returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % s_players.length;
-    }
-
     function _isEntryWindowOpen() private view returns (bool) {
         return block.timestamp - s_lastTimeStamp <= i_interval;
     }

@@ -11,6 +11,7 @@ Traditional lottery systems are centralized and opaque. Users cannot verify the 
 ## 3. User personas
 
 ### Player
+
 The Player represents anyone who participates in the lottery by paying entry fees for a chance to win the prize pool. This persona encompasses various gambling motivations and behaviors:
 
 - **Casual Players**: Occasional participants who enter for entertainment or the excitement of potentially winning
@@ -23,6 +24,7 @@ The Player represents anyone who participates in the lottery by paying entry fee
 **Technical comfort**: Varies from blockchain beginners to experienced DeFi users
 
 ### Lottery Operator
+
 The Lottery Operator is the person or entity responsible for deploying, configuring, and maintaining the lottery smart contract. They act as the business owner of the lottery service.
 
 **Primary responsibilities**: Deploying the contract with appropriate parameters, monitoring operations, ensuring the system runs smoothly
@@ -55,6 +57,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I can start offering a transparent gambling service with configurable parameters.
 
   **Acceptance Criteria:**
+
   - Given I provide an entry fee amount in the constructor, when I deploy the contract, then it deploys successfully to Sepolia testnet
   - Given the contract is deployed, when I check the entry fee, then it matches the amount I configured at deployment
   - Given the contract is deployed, when I verify on Etherscan, then the constructor parameters are visible and correct
@@ -67,11 +70,12 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I have a chance to win the prize pool.
 
   **Acceptance Criteria:**
+
   - Given the lottery is open, when I send exactly the entry fee amount to enterRaffle(), then I am added to the current round's participants
-  - Given I send more than the entry fee, when I call enterRaffle(), then my transaction reverts with "Raffle__SendMoreToEnterRaffle"
-  - Given I send less than the entry fee, when I call enterRaffle(), then my transaction reverts with "Raffle__SendLessToEnterRaffle"
+  - Given I send more than the entry fee, when I call enterRaffle(), then my transaction reverts with "Raffle\_\_SendMoreToEnterRaffle"
+  - Given I send less than the entry fee, when I call enterRaffle(), then my transaction reverts with "Raffle\_\_SendLessToEnterRaffle"
   - Given I successfully enter, when the transaction completes, then an EnteredRaffle event is emitted with my address and entry fee
-  - Given the entry window has elapsed, when I attempt to enter, then my transaction reverts with "Raffle__RaffleNotOpen"
+  - Given the entry window has elapsed, when I attempt to enter, then my transaction reverts with "Raffle\_\_RaffleNotOpen"
   - Given I query the contract, when I check my entry status, then I can verify I'm included in the current round
 
 - **US-003: Manual Draw Control**
@@ -81,11 +85,12 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I can validate the complete lottery flow before implementing automation.
 
   **Acceptance Criteria:**
+
   - Given the entry window has elapsed, when I call performDraw(), then a winner is selected from current participants
   - Given there are no participants, when I trigger a draw, then the system resets for the next round without prize distribution
   - Given a draw is triggered, when it completes, then a DrawRequested event is emitted with timestamp and participant count
-  - Given I am not the operator, when I attempt to trigger a draw, then the transaction reverts with "Raffle__NotOwner"
-  - Given the entry window is still active, when I attempt a draw, then the transaction reverts with "Raffle__RaffleNotReady"
+  - Given I am not the operator, when I attempt to trigger a draw, then the transaction reverts with "Raffle\_\_NotOwner"
+  - Given the entry window is still active, when I attempt a draw, then the transaction reverts with "Raffle\_\_RaffleNotReady"
   - Given a winner is selected, when the draw completes, then winner selection uses block.timestamp % participants.length for pseudo-randomness
 
 - **US-004: Automatic Prize Distribution**
@@ -95,6 +100,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I get my winnings immediately without additional steps.
 
   **Acceptance Criteria:**
+
   - Given I am selected as winner, when the draw completes, then I receive 100% of all collected entry fees
   - Given the prize transfer, when it executes, then it uses the call method for secure ETH transfer
   - Given I am the winner, when prize distribution occurs, then a WinnerPicked event is emitted with my address and prize amount
@@ -108,10 +114,11 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I can trust the outcome is not manipulated by the operator.
 
   **Acceptance Criteria:**
+
   - Given a draw is triggered, when performDraw() is called, then it requests randomness from Chainlink VRF v2
   - Given the VRF request is made, when it's submitted, then a RandomnessRequested event is emitted with requestId
   - Given the VRF responds, when fulfillRandomWords() is called, then the winner is selected using the random number
-  - Given the VRF subscription lacks funds, when a draw is attempted, then the transaction reverts with "Raffle__InsufficientVRFFunds"
+  - Given the VRF subscription lacks funds, when a draw is attempted, then the transaction reverts with "Raffle\_\_InsufficientVRFFunds"
   - Given the VRF request times out, when checked, then the contract maintains its current state until retry
   - Given the random number is received, when winner selection occurs, then it uses randomResult % participants.length
 
@@ -122,6 +129,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I can be sure draws happen on time without operator dependency.
 
   **Acceptance Criteria:**
+
   - Given the contract is registered with Chainlink Automation, when the time interval elapses, then checkUpkeep() returns true if participants exist
   - Given checkUpkeep() returns true, when Chainlink calls performUpkeep(), then a draw is automatically triggered
   - Given there are no participants, when the time interval elapses, then checkUpkeep() returns false and no draw occurs
@@ -136,6 +144,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I can trust the game conditions won't change unexpectedly.
 
   **Acceptance Criteria:**
+
   - Given the contract is deployed, when I check the entry fee, then it is stored in an immutable variable that cannot be modified
   - Given the contract is deployed, when I check the draw interval, then it is stored in an immutable variable that cannot be modified
   - Given the contract exists, when I review the code, then there are no setter functions for entry fee or draw interval
@@ -149,6 +158,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I can participate with confidence in the lottery's security.
 
   **Acceptance Criteria:**
+
   - Given any payable function, when called, then it uses OpenZeppelin's ReentrancyGuard modifier
   - Given the winner payout function, when executed, then it follows checks-effects-interactions pattern
   - Given any state-changing function, when called recursively, then it reverts with "ReentrancyGuard: reentrant call"
@@ -163,12 +173,30 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   So that I can monitor system health and maintain transparent operations.
 
   **Acceptance Criteria:**
+
   - Given a player enters the lottery, when the transaction succeeds, then an EnteredRaffle event is emitted with indexed playerAddress and entryFee
   - Given a draw is requested, when the VRF call is made, then a RandomnessRequested event is emitted with indexed requestId and timestamp
   - Given a winner is selected, when the draw completes, then a WinnerPicked event is emitted with indexed winnerAddress and prizeAmount
   - Given any round completes, when it resets, then a RoundReset event is emitted with the new round number and timestamp
   - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address, request ID, or winner
   - Given I check event history, when I query the blockchain, then all lottery activities are permanently logged and auditable
+
+- **US-010: Secure Winner Withdrawal Pattern**
+
+  As a lottery winner,
+  I want to securely withdraw my prize using a pull payment pattern,
+  So that my winnings are protected from reentrancy attacks and contract failures cannot lock funds permanently.
+
+  **Acceptance Criteria:**
+
+  - Given I am selected as winner, when the draw completes, then my withdrawal becomes available but funds remain in contract
+  - Given I have a pending withdrawal, when I call withdrawPrize(), then I receive 100% of my prize amount
+  - Given I withdraw my prize, when the transfer completes, then my pending withdrawal balance is set to zero
+  - Given I have no pending withdrawal, when I call withdrawPrize(), then the transaction reverts with "Raffle__NoPrizeToWithdraw"
+  - Given I withdraw my prize, when the withdrawal succeeds, then a PrizeWithdrawn event is emitted with my address and amount
+  - Given the transfer fails during withdrawal, when I retry, then I can attempt withdrawal again without losing my prize
+  - Given multiple winners across rounds, when they withdraw, then each receives only their designated prize amount
+  - Given a winner has not withdrawn, when I query the contract, then I can check my pending withdrawal amount
 
 ## 7. Success metrics
 
