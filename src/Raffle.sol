@@ -12,6 +12,8 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
+    address private constant NO_WINNER = address(0);
+    uint256 private constant NO_PRIZE = 0;
 
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
@@ -25,11 +27,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     uint256 private s_requestId;
     RaffleState private s_raffleState;
+    uint256 private s_roundNumber;
 
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested();
+    event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__NotEnoughTimeHasPassed();
@@ -67,6 +71,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         i_callbackGasLimit = callbackGasLimit;
 
         s_raffleState = RaffleState.OPEN;
+        s_roundNumber = 1;
     }
 
     function enterRaffle() external payable {
@@ -101,6 +106,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         }
 
         if (s_players.length == 0) {
+            emit RoundCompleted(s_roundNumber, NO_WINNER, NO_PRIZE);
             _resetRaffleForNextRound();
             return;
         }
@@ -132,6 +138,8 @@ contract Raffle is VRFConsumerBaseV2Plus {
         address winner = s_players[randomWords[0] % s_players.length];
         uint256 prizeAmount = address(this).balance;
 
+        emit RoundCompleted(s_roundNumber, winner, prizeAmount);
+
         _resetRaffleForNextRound();
 
         (bool success,) = payable(winner).call{value: prizeAmount}("");
@@ -150,6 +158,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_players = new address payable[](0);
         s_lastTimeStamp = block.timestamp;
         s_raffleState = RaffleState.OPEN;
+        s_roundNumber++;
     }
 
     function _addPlayerToRaffle(address player) private {
