@@ -19,6 +19,7 @@ contract RaffleTest is Test {
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
+    event DrawRequested();
 
     function setUp() public {
         s_vrfCoordinatorMock = new MyVRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
@@ -175,6 +176,23 @@ contract RaffleTest is Test {
         emit RaffleEntered(player);
 
         _enterRaffleAsPlayer(raffle, player, entranceFee);
+    }
+
+    function test_PickWinnerEmitsDrawRequestedEvent() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        vm.expectEmit(false, false, false, false, address(raffle));
+        emit DrawRequested();
+
+        raffle.pickWinner();
     }
 
     function test_PickWinnerRevertsWhenNotEnoughTimeHasPassed() public {
