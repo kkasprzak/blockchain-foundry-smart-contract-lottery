@@ -178,8 +178,8 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given a draw is requested, when pickWinner() is called successfully, then a DrawRequested event is emitted
   - Given a winner is selected, when the draw completes, then a WinnerSelected event is emitted with indexed winnerAddress and prizeAmount
   - Given a prize transfer fails, when the winner cannot receive funds, then a PrizeTransferFailed event is emitted with indexed winnerAddress and prizeAmount
-  - Given any round completes, when it resets, then a RoundReset event is emitted with the new round number and timestamp
-  - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address or winner
+  - Given any round completes (with or without winner), when it finishes, then a RoundCompleted event is emitted with indexed roundNumber, indexed winner address (or address(0) if no participants), and prize amount
+  - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address, winner, or round number
   - Given I check event history, when I query the blockchain, then all lottery activities are permanently logged and auditable
 
 - **US-010: Secure Winner Withdrawal Pattern**

@@ -20,6 +20,7 @@ contract RaffleTest is Test {
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested();
+    event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     function setUp() public {
         s_vrfCoordinatorMock = new MyVRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
@@ -391,6 +392,45 @@ contract RaffleTest is Test {
         emit PrizeTransferFailed(address(maliciousWinner), expectedPrizeAmount);
 
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+    }
+
+    function test_RoundCompletedEventEmittedAfterWinnerSelection() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        vm.recordLogs();
+        raffle.pickWinner();
+
+        uint256 expectedRoundNumber = 1;
+        uint256 expectedPrize = entranceFee;
+
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit RoundCompleted(expectedRoundNumber, player, expectedPrize);
+
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+    }
+
+    function test_RoundCompletedEventEmittedWhenNoParticipants() public {
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithInterval(interval);
+
+        _waitForDrawTime(interval + 1);
+
+        uint256 expectedRoundNumber = 1;
+        address expectedWinner = address(0);
+        uint256 expectedPrize = 0;
+
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit RoundCompleted(expectedRoundNumber, expectedWinner, expectedPrize);
+
+        raffle.pickWinner();
     }
 
     function _createValidRaffle() private returns (Raffle) {
