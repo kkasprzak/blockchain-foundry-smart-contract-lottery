@@ -433,6 +433,45 @@ contract RaffleTest is Test {
         raffle.pickWinner();
     }
 
+    function test_RoundNumberIncrementsAcrossMultipleRounds() public {
+        // Setup
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+        _fundPlayerForRaffle(player, 10 ether);
+
+        // Round 1
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _waitForDrawTime(interval + 1);
+        vm.recordLogs();
+        raffle.pickWinner();
+
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit RoundCompleted(1, player, entranceFee);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+
+        // Round 2
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _waitForDrawTime(interval + 1);
+        vm.recordLogs();
+        raffle.pickWinner();
+
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit RoundCompleted(2, player, entranceFee);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+
+        // Round 3
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _waitForDrawTime(interval + 1);
+        vm.recordLogs();
+        raffle.pickWinner();
+
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit RoundCompleted(3, player, entranceFee);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+    }
+
     function _createValidRaffle() private returns (Raffle) {
         return _createRaffleWithEntranceFeeAndInterval(1 ether, 1);
     }
