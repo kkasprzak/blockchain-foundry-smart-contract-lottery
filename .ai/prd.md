@@ -174,11 +174,12 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
   **Acceptance Criteria:**
 
-  - Given a player enters the lottery, when the transaction succeeds, then an EnteredRaffle event is emitted with indexed playerAddress and entryFee
-  - Given a draw is requested, when the VRF call is made, then a RandomnessRequested event is emitted with indexed requestId and timestamp
-  - Given a winner is selected, when the draw completes, then a WinnerPicked event is emitted with indexed winnerAddress and prizeAmount
+  - Given a player enters the lottery, when the transaction succeeds, then a RaffleEntered event is emitted with indexed playerAddress
+  - Given a draw is requested, when pickWinner() is called successfully, then a DrawRequested event is emitted
+  - Given a winner is selected, when the draw completes, then a WinnerSelected event is emitted with indexed winnerAddress and prizeAmount
+  - Given a prize transfer fails, when the winner cannot receive funds, then a PrizeTransferFailed event is emitted with indexed winnerAddress and prizeAmount
   - Given any round completes, when it resets, then a RoundReset event is emitted with the new round number and timestamp
-  - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address, request ID, or winner
+  - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address or winner
   - Given I check event history, when I query the blockchain, then all lottery activities are permanently logged and auditable
 
 - **US-010: Secure Winner Withdrawal Pattern**

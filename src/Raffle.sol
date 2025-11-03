@@ -29,6 +29,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     event RaffleEntered(address indexed player);
     event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
     event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
+    event DrawRequested();
 
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__NotEnoughTimeHasPassed();
@@ -107,6 +108,8 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_raffleState = RaffleState.DRAWING;
 
         s_requestId = _requestRandomWords();
+
+        emit DrawRequested();
     }
 
     function getEntranceFee() external view returns (uint256) {
