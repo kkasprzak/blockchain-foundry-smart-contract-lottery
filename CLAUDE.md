@@ -183,3 +183,114 @@ Follow these Solidity style guide formatting rules:
 - Use `immutable` keyword for variables that are set once in constructor
 - Use `constant` keyword for compile-time constants
 - Prefer `uint256` over smaller uints for gas efficiency (unless packing structs)
+
+## Task-Based Development Workflow
+
+### Task Management
+
+- All tasks are tracked as GitHub issues on the project board
+- Each issue represents a specific feature, bug fix, or improvement
+- Work on one task at a time
+
+### Starting Work on a Task
+
+**IMPORTANT: Never work directly on the `main` branch**
+
+1. **Sync with remote main:**
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+2. **Create feature branch from origin/main:**
+   ```bash
+   git checkout -b feature/<descriptive-name>
+   ```
+
+   Branch naming examples:
+   - `feature/add-roundid-to-raffleentered` (for issue #14)
+   - `feature/issue-4-add-round-reset-event`
+   - `fix/prize-transfer-error`
+
+3. **Verify branch is based on latest origin/main**
+
+### Working on the Task
+
+- Follow TDD and Pair Programming practices (see skill documentation)
+- Commit frequently - better to commit often than rarely
+- Use conventional commit format:
+  - `feat:` - new feature
+  - `fix:` - bug fix
+  - `refactor:` - code refactoring
+  - `test:` - adding/updating tests
+  - `docs:` - documentation
+
+### Creating Pull Request
+
+1. **Push feature branch:**
+   ```bash
+   git push -u origin feature/<branch-name>
+   ```
+
+2. **Create PR with GitHub CLI:**
+   ```bash
+   gh pr create --title "feat: Title description (#issue-number)" --body "..."
+   ```
+
+3. **Link to GitHub Issue:**
+   - Include `Closes #<issue-number>` in PR description
+   - This automatically closes the issue when PR is merged
+
+### Merging Pull Request
+
+**Wait for CI pipeline to pass**, then merge:
+
+```bash
+gh pr merge <pr-number> --squash --delete-branch
+```
+
+### After Merge
+
+Update local main:
+
+```bash
+git checkout main
+git pull origin main
+```
+
+### Complete Workflow Example
+
+```bash
+# Start fresh from main
+git checkout main
+git pull origin main
+
+# Create feature branch for issue #14
+git checkout -b feature/add-roundid-to-raffleentered
+
+# Work on the task (TDD/PP)...
+# Commit frequently...
+git add -A
+git commit -m "feat: add roundNumber to events"
+
+# Push and create PR
+git push -u origin feature/add-roundid-to-raffleentered
+gh pr create --title "feat: Add roundNumber to events (#14)" \
+  --body "Closes #14"
+
+# Wait for pipeline, then merge
+gh pr merge 16 --squash --delete-branch
+
+# Return to main
+git checkout main
+git pull origin main
+```
+
+### Key Rules
+
+- ✅ Always create feature branch from latest `origin/main`
+- ✅ Link PRs to issues using `Closes #X`
+- ✅ Wait for CI pipeline to pass before merging
+- ✅ Use squash merge to keep history clean
+- ❌ Never work directly on `main` branch
+- ❌ Never create branch from local `main` without syncing first
