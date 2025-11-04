@@ -15,8 +15,8 @@ contract InteractionsTest is Test {
     Raffle raffle;
     MyVRFCoordinatorV2_5Mock myVRFCoordinatorV2_5Mock;
 
-    event RaffleEntered(address indexed player);
-    event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
+    event RaffleEntered(uint256 indexed roundNumber, address indexed player);
+    event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
@@ -37,18 +37,18 @@ contract InteractionsTest is Test {
         uint256 entranceFees = entranceFee * 3;
         uint256 expectedPrizePool = entranceFees + address(raffle).balance;
 
-        vm.expectEmit(true, false, false, false, address(raffle));
-        emit RaffleEntered(player1);
+        vm.expectEmit(true, true, false, false, address(raffle));
+        emit RaffleEntered(1, player1);
         vm.prank(player1);
         raffle.enterRaffle{value: entranceFee}();
 
-        vm.expectEmit(true, false, false, false, address(raffle));
-        emit RaffleEntered(player2);
+        vm.expectEmit(true, true, false, false, address(raffle));
+        emit RaffleEntered(1, player2);
         vm.prank(player2);
         raffle.enterRaffle{value: entranceFee}();
 
-        vm.expectEmit(true, false, false, false, address(raffle));
-        emit RaffleEntered(player3);
+        vm.expectEmit(true, true, false, false, address(raffle));
+        emit RaffleEntered(1, player3);
         vm.prank(player3);
         raffle.enterRaffle{value: entranceFee}();
 
@@ -58,8 +58,8 @@ contract InteractionsTest is Test {
         RafflePickWinner rafflePickWinner = new RafflePickWinner();
         rafflePickWinner.pickWinner(address(raffle));
 
-        vm.expectEmit(false, false, false, true, address(raffle));
-        emit WinnerSelected(address(0), expectedPrizePool);
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit RoundCompleted(1, player2, expectedPrizePool);
 
         myVRFCoordinatorV2_5Mock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1

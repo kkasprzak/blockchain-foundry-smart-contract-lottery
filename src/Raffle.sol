@@ -29,10 +29,9 @@ contract Raffle is VRFConsumerBaseV2Plus {
     RaffleState private s_raffleState;
     uint256 private s_roundNumber;
 
-    event RaffleEntered(address indexed player);
-    event WinnerSelected(address indexed winnerAddress, uint256 prizeAmount);
-    event PrizeTransferFailed(address indexed winnerAddress, uint256 prizeAmount);
-    event DrawRequested();
+    event RaffleEntered(uint256 indexed roundNumber, address indexed player);
+    event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
+    event DrawRequested(uint256 indexed roundNumber);
     event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     error Raffle__SendMoreToEnterRaffle();
@@ -93,7 +92,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
         _addPlayerToRaffle(msg.sender);
 
-        emit RaffleEntered(msg.sender);
+        emit RaffleEntered(s_roundNumber, msg.sender);
     }
 
     function pickWinner() external {
@@ -106,16 +105,17 @@ contract Raffle is VRFConsumerBaseV2Plus {
         }
 
         if (s_players.length == 0) {
-            emit RoundCompleted(s_roundNumber, NO_WINNER, NO_PRIZE);
+            uint256 roundNumber = s_roundNumber;
+
             _resetRaffleForNextRound();
+            emit RoundCompleted(roundNumber, NO_WINNER, NO_PRIZE);
             return;
         }
 
         s_raffleState = RaffleState.DRAWING;
-
         s_requestId = _requestRandomWords();
 
-        emit DrawRequested();
+        emit DrawRequested(s_roundNumber);
     }
 
     function getEntranceFee() external view returns (uint256) {
@@ -137,17 +137,16 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
         address winner = s_players[randomWords[0] % s_players.length];
         uint256 prizeAmount = address(this).balance;
-
-        emit RoundCompleted(s_roundNumber, winner, prizeAmount);
+        uint256 roundNumber = s_roundNumber;
 
         _resetRaffleForNextRound();
 
         (bool success,) = payable(winner).call{value: prizeAmount}("");
 
         if (success) {
-            emit WinnerSelected(winner, prizeAmount);
+            emit RoundCompleted(roundNumber, winner, prizeAmount);
         } else {
-            emit PrizeTransferFailed(winner, prizeAmount);
+            emit PrizeTransferFailed(roundNumber, winner, prizeAmount);
         }
     }
 
