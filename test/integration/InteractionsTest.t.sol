@@ -15,7 +15,7 @@ contract InteractionsTest is Test {
     Raffle raffle;
     MyVRFCoordinatorV2_5Mock myVRFCoordinatorV2_5Mock;
 
-    event RaffleEntered(uint256 indexed roundId, address indexed player);
+    event RaffleEntered(uint256 indexed roundNumber, address indexed player);
     event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     function setUp() external {
