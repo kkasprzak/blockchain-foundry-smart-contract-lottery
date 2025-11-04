@@ -105,13 +105,14 @@ contract Raffle is VRFConsumerBaseV2Plus {
         }
 
         if (s_players.length == 0) {
-            emit RoundCompleted(s_roundNumber, NO_WINNER, NO_PRIZE);
+            uint256 roundNumber = s_roundNumber;
+
             _resetRaffleForNextRound();
+            emit RoundCompleted(roundNumber, NO_WINNER, NO_PRIZE);
             return;
         }
 
         s_raffleState = RaffleState.DRAWING;
-
         s_requestId = _requestRandomWords();
 
         emit DrawRequested(s_roundNumber);
