@@ -88,7 +88,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
   - Given the entry window has elapsed, when I call performDraw(), then a winner is selected from current participants
   - Given there are no participants, when I trigger a draw, then the system resets for the next round without prize distribution
-  - Given a draw is triggered, when it completes, then a DrawRequested event is emitted with timestamp and participant count
+  - Given a draw is triggered, when it completes, then a DrawRequested event is emitted with indexed roundNumber
   - Given I am not the operator, when I attempt to trigger a draw, then the transaction reverts with "Raffle\_\_NotOwner"
   - Given the entry window is still active, when I attempt a draw, then the transaction reverts with "Raffle\_\_RaffleNotReady"
   - Given a winner is selected, when the draw completes, then winner selection uses block.timestamp % participants.length for pseudo-randomness
@@ -174,10 +174,9 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
   **Acceptance Criteria:**
 
-  - Given a player enters the lottery, when the transaction succeeds, then a RaffleEntered event is emitted with indexed playerAddress
-  - Given a draw is requested, when pickWinner() is called successfully, then a DrawRequested event is emitted
-  - Given a winner is selected, when the draw completes, then a WinnerSelected event is emitted with indexed winnerAddress and prizeAmount
-  - Given a prize transfer fails, when the winner cannot receive funds, then a PrizeTransferFailed event is emitted with indexed winnerAddress and prizeAmount
+  - Given a player enters the lottery, when the transaction succeeds, then a RaffleEntered event is emitted with indexed roundNumber and indexed playerAddress
+  - Given a draw is requested, when pickWinner() is called successfully, then a DrawRequested event is emitted with indexed roundNumber
+  - Given a prize transfer fails, when the winner cannot receive funds, then a PrizeTransferFailed event is emitted with indexed roundNumber, indexed winnerAddress, and prizeAmount
   - Given any round completes (with or without winner), when it finishes, then a RoundCompleted event is emitted with indexed roundNumber, indexed winner address (or address(0) if no participants), and prize amount
   - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address, winner, or round number
   - Given I check event history, when I query the blockchain, then all lottery activities are permanently logged and auditable
