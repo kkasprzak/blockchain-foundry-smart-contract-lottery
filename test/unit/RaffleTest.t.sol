@@ -372,6 +372,33 @@ contract RaffleTest is Test {
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
     }
 
+    function test_PickWinnerBlocksReentrancyAttackDuringPrizeTransfer() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        MaliciousWinnerReentersOnPrizeTransfer maliciousWinner =
+            new MaliciousWinnerReentersOnPrizeTransfer(raffle, s_vrfCoordinatorMock, vm);
+
+        _fundPlayerForRaffle(address(maliciousWinner), 1 ether);
+        _enterRaffleAsPlayer(raffle, address(maliciousWinner), entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        uint256 expectedPrizeAmount = entranceFee;
+
+        vm.recordLogs();
+        raffle.pickWinner();
+
+        // The malicious winner will try to re-enter fulfillRandomWords during prize transfer
+        // ReentrancyGuard should block this, causing the transfer to fail with PrizeTransferFailed
+        // (The inner revert from ReentrancyGuardReentrantCall causes the transfer to fail)
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
+
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+    }
+
     function test_RoundCompletedEventEmittedAfterWinnerSelection() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
@@ -489,5 +516,24 @@ contract RaffleTest is Test {
 contract MaliciousWinnerRevertsOnReceive {
     receive() external payable {
         revert("Malicious winner refuses payment");
+    }
+}
+
+contract MaliciousWinnerReentersOnPrizeTransfer {
+    using LogHelpers for Vm.Log[];
+
+    Raffle private raffle;
+    MyVRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
+    Vm private vm;
+
+    constructor(Raffle _raffle, MyVRFCoordinatorV2_5Mock _vrfCoordinatorMock, Vm _vm) {
+        raffle = _raffle;
+        s_vrfCoordinatorMock = _vrfCoordinatorMock;
+        vm = _vm;
+    }
+
+    receive() external payable {
+        // Try to re-enter by calling VRF callback again
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
     }
 }
