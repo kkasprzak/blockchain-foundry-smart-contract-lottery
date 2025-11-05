@@ -69,18 +69,6 @@ contract RaffleTest is Test {
         );
     }
 
-    function test_RaffleRevertsWhenYouDontPayEnough() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 insufficientPayment = entranceFee / 10;
-        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
-        address player = makeAddr("player");
-
-        _fundPlayerForRaffle(player, 1 ether);
-
-        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
-        _enterRaffleAsPlayer(raffle, player, insufficientPayment);
-    }
-
     function test_RaffleRevertsWhenEnteringDuringDrawTime() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
@@ -101,6 +89,18 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
     }
 
+    function test_RaffleRevertsWhenYouDontPayEnough() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 insufficientPayment = entranceFee / 10;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+
+        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
+        _enterRaffleAsPlayer(raffle, player, insufficientPayment);
+    }
+
     function test_RaffleAllowsUserToEnterWithEnoughFee() public {
         uint256 entranceFee = 0.01 ether;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
@@ -111,7 +111,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
     }
 
-    function test_RaffleAllowsUserToEnterWithMoreThanEnoughFee() public {
+    function test_RaffleRevertsWhenOverpaying() public {
         uint256 entranceFee = 0.01 ether;
         uint256 overpayment = entranceFee * 2;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
@@ -119,6 +119,7 @@ contract RaffleTest is Test {
 
         _fundPlayerForRaffle(player, 1 ether);
 
+        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
         _enterRaffleAsPlayer(raffle, player, overpayment);
     }
 
