@@ -139,9 +139,9 @@ contract Raffle is VRFConsumerBaseV2Plus {
         uint256 prizeAmount = address(this).balance;
         uint256 roundNumber = s_roundNumber;
 
-        _resetRaffleForNextRound();
-
         (bool success,) = payable(winner).call{value: prizeAmount}("");
+
+        _resetRaffleForNextRound();
 
         if (success) {
             emit RoundCompleted(roundNumber, winner, prizeAmount);
