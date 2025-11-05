@@ -390,9 +390,6 @@ contract RaffleTest is Test {
         vm.recordLogs();
         raffle.pickWinner();
 
-        // The malicious winner will try to re-enter fulfillRandomWords during prize transfer
-        // ReentrancyGuard should block this, causing the transfer to fail with PrizeTransferFailed
-        // (The inner revert from ReentrancyGuardReentrantCall causes the transfer to fail)
         vm.expectEmit(true, true, false, true, address(raffle));
         emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
 
@@ -522,18 +519,20 @@ contract MaliciousWinnerRevertsOnReceive {
 contract MaliciousWinnerReentersOnPrizeTransfer {
     using LogHelpers for Vm.Log[];
 
-    Raffle private raffle;
+    Raffle private s_raffle;
     MyVRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
-    Vm private vm;
+    Vm private s_vm;
 
     constructor(Raffle _raffle, MyVRFCoordinatorV2_5Mock _vrfCoordinatorMock, Vm _vm) {
-        raffle = _raffle;
+        s_raffle = _raffle;
         s_vrfCoordinatorMock = _vrfCoordinatorMock;
-        vm = _vm;
+        s_vm = _vm;
     }
 
     receive() external payable {
         // Try to re-enter by calling VRF callback again
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            s_vm.getRecordedLogs().getVrfRequestId(), address(s_raffle), 0
+        );
     }
 }
