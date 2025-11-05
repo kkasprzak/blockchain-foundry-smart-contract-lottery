@@ -3,8 +3,9 @@ pragma solidity ^0.8.19;
 
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract Raffle is VRFConsumerBaseV2Plus {
+contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     enum RaffleState {
         OPEN,
         DRAWING
@@ -126,7 +127,12 @@ contract Raffle is VRFConsumerBaseV2Plus {
         return s_playersInRaffle[player];
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual override {
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords)
+        internal
+        virtual
+        override
+        nonReentrant
+    {
         if (s_raffleState != RaffleState.DRAWING) {
             revert Raffle__RaffleIsNotDrawing();
         }
