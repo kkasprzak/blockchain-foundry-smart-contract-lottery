@@ -54,6 +54,7 @@ Players pay a configurable entry fee to join lottery rounds. When the predetermi
 
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
+- [Slither](https://github.com/crytic/slither) (optional, for security analysis)
 
 ### Installation
 
@@ -68,12 +69,17 @@ cd foundry-smart-contract-lottery-f23
 forge install
 ```
 
-3. Build the project:
+3. Install Slither (optional, recommended for security):
+```bash
+brew install slither-analyzer
+```
+
+4. Build the project:
 ```bash
 forge build
 ```
 
-4. Run tests to verify setup:
+5. Run tests to verify setup:
 ```bash
 forge test
 ```
@@ -168,10 +174,22 @@ forge snapshot
 ```
 
 ### Security Analysis
-Run static security analysis:
+Run Slither static security analysis:
 ```bash
-slither .
+make slither
 ```
+
+Or run directly with Slither:
+```bash
+slither . --foundry-compile-all --filter-paths "lib/,test/" --exclude-informational --exclude-optimization
+```
+
+This analyzes the smart contracts for:
+- Reentrancy vulnerabilities
+- Access control issues
+- Arithmetic problems
+- Gas optimization opportunities
+- Best practice violations
 
 ### Linting
 Check code quality and style:
@@ -251,12 +269,13 @@ This will:
 
 ---
 
-## Available Deployment Commands
+## Available Commands
 
 ```bash
 make help           # Show all available commands
-make build          # Compile contracts  
+make build          # Compile contracts
 make test           # Run tests
+make slither        # Run Slither security analysis
 make deploy-local   # Deploy to local Anvil
 make deploy-sepolia # Deploy to Sepolia testnet
 ```
