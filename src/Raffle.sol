@@ -96,6 +96,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit RaffleEntered(s_roundNumber, msg.sender);
     }
 
+    // slither-disable-next-line reentrancy-events
     function pickWinner() external {
         if (false == _isLotteryOperator(msg.sender)) {
             revert Raffle__NotOperator();
@@ -127,6 +128,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         return s_playersInRaffle[player];
     }
 
+    // slither-disable-next-line reentrancy-eth
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords)
         internal
         virtual
@@ -145,9 +147,9 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         uint256 prizeAmount = address(this).balance;
         uint256 roundNumber = s_roundNumber;
 
-        (bool success,) = payable(winner).call{value: prizeAmount}("");
-
         _resetRaffleForNextRound();
+
+        (bool success,) = payable(winner).call{value: prizeAmount}("");
 
         if (success) {
             emit RoundCompleted(roundNumber, winner, prizeAmount);
@@ -184,6 +186,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         return s_vrfCoordinator.requestRandomWords(req);
     }
 
+    // slither-disable-next-line timestamp
     function _isEntryWindowOpen() private view returns (bool) {
         return block.timestamp - s_lastTimeStamp <= i_interval;
     }

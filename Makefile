@@ -1,4 +1,4 @@
-.PHONY: help install build test clean deploy-sepolia deploy-local
+.PHONY: help install build test clean deploy-sepolia deploy-local slither
 
 # Default target - show help when no target specified
 help:
@@ -13,12 +13,16 @@ help:
 	@echo "Testing Commands:"
 	@echo "  test             Run all tests"
 	@echo ""
+	@echo "Security Commands:"
+	@echo "  slither          Run Slither static analysis"
+	@echo ""
 	@echo "Deployment Commands:"
 	@echo "  deploy-local     Deploy to local network (anvil)"
 	@echo "  deploy-sepolia   Deploy to Sepolia testnet"
 	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make test                         # Quick testing during development"
+	@echo "  make slither                      # Run security analysis"
 	@echo "  make deploy-local                 # Test deployment locally"
 
 # Install forge dependencies
@@ -47,3 +51,8 @@ deploy-local:
 	@echo "Deploying Raffle to local network..."
 	@cast rpc anvil_mine 20 --rpc-url local > /dev/null 2>&1 || true
 	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url local --broadcast --account localKey -vvvv
+
+# Run Slither static analysis
+slither:
+	@echo "Running Slither static analysis..."
+	@slither . --foundry-compile-all --filter-paths "lib/,test/" --exclude-informational --exclude-optimization
