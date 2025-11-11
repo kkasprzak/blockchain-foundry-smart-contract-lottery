@@ -149,11 +149,11 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
 
         _resetRaffleForNextRound();
 
+        emit RoundCompleted(roundNumber, winner, prizeAmount);
+
         (bool success,) = payable(winner).call{value: prizeAmount}("");
 
-        if (success) {
-            emit RoundCompleted(roundNumber, winner, prizeAmount);
-        } else {
+        if (!success) {
             emit PrizeTransferFailed(roundNumber, winner, prizeAmount);
         }
     }
