@@ -76,7 +76,8 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given I send less than the entry fee, when I call enterRaffle(), then my transaction reverts with "Raffle\_\_SendLessToEnterRaffle"
   - Given I successfully enter, when the transaction completes, then an EnteredRaffle event is emitted with my address and entry fee
   - Given the entry window has elapsed, when I attempt to enter, then my transaction reverts with "Raffle\_\_RaffleNotOpen"
-  - Given I query the contract, when I check my entry status, then I can verify I'm included in the current round
+  - Given I already entered the current round, when I call enterRaffle() again with the exact entry fee, then I am added again as a separate entry
+  - Given I enter multiple times, when the winner is selected, then my probability of winning is proportional to my number of entries
 
 - **US-003: Manual Draw Control**
 
