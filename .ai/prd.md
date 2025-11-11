@@ -35,7 +35,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 ## 4. Functional requirements
 
 - Participant entry: Users must pay an exact entry fee amount to join the current lottery round. The system validates the payment amount and rejects entries with incorrect fees. Each valid entry is recorded and the participant becomes eligible to win.
-- Automated lottery draws: The system conducts draws at predefined time intervals. A draw occurs only when the time interval has elapsed and at least one participant has entered. If no participants exist, the system waits for the next interval.
+- The system conducts draws at predefined time intervals. When the time interval elapses, the round completes. If participants exist, a winner is selected. If no participants exist, the round closes without a winner and a new round begins immediately.
 - Random winner selection: When a draw is triggered, the system requests verifiable randomness from an external oracle service. Once randomness is received, a winner is selected from all participants in the current round.
 - Prize distribution: The entire collected prize pool is transferred to the selected winner immediately after selection. No fees or commissions are deducted from the prize.
 - Round reset: After prize distribution, the system automatically starts a new lottery round, clearing all previous participants and resetting the timer.
@@ -131,12 +131,10 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
   **Acceptance Criteria:**
 
-  - Given the contract is registered with Chainlink Automation, when the time interval elapses, then checkUpkeep() returns true if participants exist
+  - Given the contract is registered with Chainlink Automation, when the time interval elapses, then checkUpkeep() returns true
   - Given checkUpkeep() returns true, when Chainlink calls performUpkeep(), then a draw is automatically triggered
-  - Given there are no participants, when the time interval elapses, then checkUpkeep() returns false and no draw occurs
   - Given the automation subscription lacks funds, when upkeep is needed, then the system pauses until refunded
   - Given the upkeep is performed, when it completes, then the next interval timer resets automatically
-  - Given I check the contract, when I query, then I can see the next scheduled draw time
 
 - **US-007: Immutable Lottery Configuration**
 
@@ -193,7 +191,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given I am selected as winner, when the draw completes, then my withdrawal becomes available but funds remain in contract
   - Given I have a pending withdrawal, when I call withdrawPrize(), then I receive 100% of my prize amount
   - Given I withdraw my prize, when the transfer completes, then my pending withdrawal balance is set to zero
-  - Given I have no pending withdrawal, when I call withdrawPrize(), then the transaction reverts with "Raffle__NoPrizeToWithdraw"
+  - Given I have no pending withdrawal, when I call withdrawPrize(), then the transaction reverts with "Raffle\_\_NoPrizeToWithdraw"
   - Given I withdraw my prize, when the withdrawal succeeds, then a PrizeWithdrawn event is emitted with my address and amount
   - Given the transfer fails during withdrawal, when I retry, then I can attempt withdrawal again without losing my prize
   - Given multiple winners across rounds, when they withdraw, then each receives only their designated prize amount
