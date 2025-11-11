@@ -12,6 +12,7 @@ contract RaffleTest is Test {
 
     bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 private constant CALLBACK_GAS_LIMIT = 500000;
+    bytes private constant EMPTY_CHECK_DATA = "";
 
     MyVRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
     uint256 private s_subscriptionId;
@@ -177,6 +178,45 @@ contract RaffleTest is Test {
         emit RaffleEntered(1, player);
 
         _enterRaffleAsPlayer(raffle, player, entranceFee);
+    }
+
+    function test_CheckUpkeepReturnsFalseWhenTimeHasNotPassed() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
+
+        assertFalse(upkeepNeeded);
+    }
+
+    function test_CheckUpkeepReturnsTrueWhenTimeHasPassedAndRaffleIsOpen() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        _waitForDrawTime(interval + 1);
+
+        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
+
+        assertTrue(upkeepNeeded);
+    }
+
+    function test_CheckUpkeepReturnsFalseWhenRaffleIsDrawing() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _waitForDrawTime(interval + 1);
+
+        raffle.pickWinner();
+
+        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
+
+        assertFalse(upkeepNeeded);
     }
 
     function test_PickWinnerEmitsDrawRequestedEvent() public {

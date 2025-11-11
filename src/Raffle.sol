@@ -4,8 +4,11 @@ pragma solidity ^0.8.19;
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {
+    AutomationCompatibleInterface
+} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
-contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
+contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleInterface {
     enum RaffleState {
         OPEN,
         DRAWING
@@ -15,6 +18,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     uint32 private constant NUM_WORDS = 1;
     address private constant NO_WINNER = address(0);
     uint256 private constant NO_PRIZE = 0;
+    bytes private constant EMPTY_PERFORM_DATA = "";
 
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
@@ -79,7 +83,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
             revert Raffle__SendMoreToEnterRaffle();
         }
 
-        if (s_raffleState != RaffleState.OPEN) {
+        if (_isRaffleInState(RaffleState.DRAWING)) {
             revert Raffle__DrawingInProgress();
         }
 
@@ -120,12 +124,33 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit DrawRequested(s_roundNumber);
     }
 
+    function performUpkeep(
+        bytes calldata /* performData */
+    )
+        external
+        override
+    {}
+
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
     }
 
     function isPlayerInRaffle(address player) public view returns (bool) {
         return s_playersInRaffle[player];
+    }
+
+    function checkUpkeep(
+        bytes memory /* checkData */
+    )
+        public
+        view
+        override
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
+    {
+        return (_isEntryWindowClosed() && _isRaffleInState(RaffleState.OPEN), EMPTY_PERFORM_DATA);
     }
 
     // slither-disable-next-line reentrancy-eth
@@ -135,7 +160,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         override
         nonReentrant
     {
-        if (s_raffleState != RaffleState.DRAWING) {
+        if (_isRaffleInState(RaffleState.OPEN)) {
             revert Raffle__RaffleIsNotDrawing();
         }
 
@@ -197,5 +222,9 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
 
     function _isLotteryOperator(address user) private view returns (bool) {
         return user == i_operator;
+    }
+
+    function _isRaffleInState(RaffleState state) private view returns (bool) {
+        return s_raffleState == state;
     }
 }
