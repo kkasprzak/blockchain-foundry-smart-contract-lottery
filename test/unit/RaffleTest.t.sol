@@ -294,7 +294,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.expectEmit(true, false, false, false, address(raffle));
-        emit DrawRequested(1);
+        emit DrawRequested(FIRST_ROUND);
 
         raffle.performUpkeep(EMPTY_CHECK_DATA);
     }
