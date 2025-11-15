@@ -42,7 +42,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
     error Raffle__InvalidInterval();
-    error Raffle__PlayerIsAlreadyInRaffle(); // TODO: Refactor(Czy nadal uzywamy tego błędu?)
+    error Raffle__PlayerIsAlreadyInRaffle();
     error Raffle__DrawingInProgress();
     error Raffle__RaffleIsNotDrawing();
     error Raffle__InvalidRequestId();

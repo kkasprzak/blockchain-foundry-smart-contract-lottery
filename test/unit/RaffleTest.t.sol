@@ -222,11 +222,26 @@ contract RaffleTest is Test {
         assertFalse(upkeepNeeded);
     }
 
-    // TODO: Testujemy tylko przypadek gdy nie minała odpowiednia ilosc czasu, czy mamy tez przypadek na zly stan raffle?
-    function test_PerformUpkeepRevertsWhenUpkeepNotNeeded() public {
+    function test_PerformUpkeepRevertsWhenTimeHasNotPassed() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
+    }
+
+    function test_PerformUpkeepRevertsWhenRaffleIsDrawing() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _waitForDrawTime(interval + 1);
+
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
         raffle.performUpkeep(EMPTY_CHECK_DATA);
