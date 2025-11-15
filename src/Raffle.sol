@@ -45,10 +45,11 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
     error Raffle__InvalidInterval();
-    error Raffle__PlayerIsAlreadyInRaffle();
+    error Raffle__PlayerIsAlreadyInRaffle(); // TODO: Refactor(Czy nadal uzywamy tego błędu?)
     error Raffle__DrawingInProgress();
     error Raffle__RaffleIsNotDrawing();
     error Raffle__InvalidRequestId();
+    error Raffle__DrawingNotAllowed();
 
     constructor(
         uint256 entranceFee,
@@ -129,7 +130,22 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     )
         external
         override
-    {}
+    {
+        if (_isEntryWindowOpen() || _isRaffleInState(RaffleState.DRAWING)) {
+            revert Raffle__DrawingNotAllowed();
+        }
+
+        if (s_players.length == 0) {
+            uint256 roundNumber = s_roundNumber;
+            _resetRaffleForNextRound();
+            emit RoundCompleted(roundNumber, NO_WINNER, NO_PRIZE);
+            return;
+        }
+
+        s_raffleState = RaffleState.DRAWING;
+        s_requestId = _requestRandomWords();
+        emit DrawRequested(s_roundNumber);
+    }
 
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;

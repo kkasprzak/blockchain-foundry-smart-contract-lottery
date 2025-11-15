@@ -13,6 +13,9 @@ contract RaffleTest is Test {
     bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 private constant CALLBACK_GAS_LIMIT = 500000;
     bytes private constant EMPTY_CHECK_DATA = "";
+    address private constant NO_WINNER = address(0);
+    uint256 private constant NO_PRIZE = 0;
+    uint256 private constant FIRST_ROUND = 1;
 
     MyVRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
     uint256 private s_subscriptionId;
@@ -217,6 +220,50 @@ contract RaffleTest is Test {
         (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
 
         assertFalse(upkeepNeeded);
+    }
+
+    function test_PerformUpkeepRevertsWhenUpkeepNotNeeded() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
+    }
+
+    function test_PerformUpkeepClosesRoundWithoutPlayers() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        _waitForDrawTime(interval + 1);
+
+        vm.expectEmit(true, true, true, false, address(raffle));
+        emit RoundCompleted(FIRST_ROUND, NO_WINNER, NO_PRIZE);
+
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
+    }
+
+    function test_PerformUpkeepStartsDrawWithPlayers() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+        address player3 = makeAddr("player3");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+        _fundPlayerForRaffle(player3, 1 ether);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+        _enterRaffleAsPlayer(raffle, player3, entranceFee);
+        _waitForDrawTime(interval + 1);
+
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit DrawRequested(FIRST_ROUND);
+
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
     }
 
     function test_PickWinnerEmitsDrawRequestedEvent() public {
