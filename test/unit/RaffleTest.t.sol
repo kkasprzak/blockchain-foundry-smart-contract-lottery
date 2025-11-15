@@ -87,7 +87,7 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
 
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         vm.expectRevert(Raffle.Raffle__DrawingInProgress.selector);
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
@@ -215,13 +215,14 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
 
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
 
         assertFalse(upkeepNeeded);
     }
 
+    // TODO: Testujemy tylko przypadek gdy nie minała odpowiednia ilosc czasu, czy mamy tez przypadek na zly stan raffle?
     function test_PerformUpkeepRevertsWhenUpkeepNotNeeded() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
@@ -280,23 +281,7 @@ contract RaffleTest is Test {
         vm.expectEmit(true, false, false, false, address(raffle));
         emit DrawRequested(1);
 
-        raffle.pickWinner();
-    }
-
-    function test_PickWinnerRevertsWhenNotEnoughTimeHasPassed() public {
-        Raffle raffle = _createRaffleWithInterval(30);
-
-        vm.expectRevert(Raffle.Raffle__NotEnoughTimeHasPassed.selector);
-        raffle.pickWinner();
-    }
-
-    function test_PickWinnerRevertsWhenCalledByNonOperator() public {
-        Raffle raffle = _createValidRaffle();
-        address unauthorizedUser = makeAddr("unauthorizedUser");
-
-        vm.prank(unauthorizedUser);
-        vm.expectRevert(Raffle.Raffle__NotOperator.selector);
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
     }
 
     function test_PickWinnerSelectsWinnerFromParticipants() public {
@@ -315,7 +300,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
 
@@ -343,7 +328,7 @@ contract RaffleTest is Test {
         uint256 totalPrizePool = entranceFee * 3;
 
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
         uint256 expectedWinnerBalance = 1 ether - entranceFee + totalPrizePool;
 
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
@@ -370,7 +355,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
 
         assertFalse(raffle.isPlayerInRaffle(player1));
@@ -391,7 +376,7 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
 
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
@@ -410,7 +395,7 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
 
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         assertTrue(raffle.isPlayerInRaffle(player));
@@ -430,7 +415,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
 
         assertFalse(raffle.isPlayerInRaffle(address(maliciousWinner)));
@@ -451,7 +436,7 @@ contract RaffleTest is Test {
         uint256 expectedPrizeAmount = entranceFee;
 
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
@@ -475,7 +460,7 @@ contract RaffleTest is Test {
         uint256 expectedPrizeAmount = entranceFee;
 
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
@@ -495,7 +480,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         uint256 expectedRoundNumber = 1;
         uint256 expectedPrize = entranceFee;
@@ -519,7 +504,7 @@ contract RaffleTest is Test {
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(expectedRoundNumber, expectedWinner, expectedPrize);
 
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
     }
 
     function test_RoundNumberIncrementsAcrossMultipleRounds() public {
@@ -534,7 +519,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(1, player, entranceFee);
@@ -544,7 +529,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(2, player, entranceFee);
@@ -554,7 +539,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
         vm.recordLogs();
-        raffle.pickWinner();
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(3, player, entranceFee);

@@ -25,7 +25,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     address payable[] private s_players;
     mapping(address => bool) private s_playersInRaffle;
     uint256 private s_lastTimeStamp;
-    address private immutable i_operator;
     bytes32 private immutable i_keyHash;
     uint256 private immutable i_subscriptionId;
     uint32 private immutable i_callbackGasLimit;
@@ -40,8 +39,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     error Raffle__SendMoreToEnterRaffle();
-    error Raffle__NotEnoughTimeHasPassed();
-    error Raffle__NotOperator();
     error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
     error Raffle__InvalidInterval();
@@ -70,7 +67,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         i_entranceFee = entranceFee;
         i_interval = interval;
         s_lastTimeStamp = block.timestamp;
-        i_operator = msg.sender;
         i_keyHash = keyHash;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
@@ -102,29 +98,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     }
 
     // slither-disable-next-line reentrancy-events
-    function pickWinner() external {
-        if (false == _isLotteryOperator(msg.sender)) {
-            revert Raffle__NotOperator();
-        }
-
-        if (_isEntryWindowOpen()) {
-            revert Raffle__NotEnoughTimeHasPassed();
-        }
-
-        if (s_players.length == 0) {
-            uint256 roundNumber = s_roundNumber;
-
-            _resetRaffleForNextRound();
-            emit RoundCompleted(roundNumber, NO_WINNER, NO_PRIZE);
-            return;
-        }
-
-        s_raffleState = RaffleState.DRAWING;
-        s_requestId = _requestRandomWords();
-
-        emit DrawRequested(s_roundNumber);
-    }
-
     function performUpkeep(
         bytes calldata /* performData */
     )
@@ -234,10 +207,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function _isEntryWindowClosed() private view returns (bool) {
         return !_isEntryWindowOpen();
-    }
-
-    function _isLotteryOperator(address user) private view returns (bool) {
-        return user == i_operator;
     }
 
     function _isRaffleInState(RaffleState state) private view returns (bool) {

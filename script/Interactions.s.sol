@@ -14,7 +14,7 @@ contract RafflePickWinner is Script {
         }
 
         vm.startBroadcast();
-        Raffle(payable(contractAddress)).pickWinner();
+        Raffle(payable(contractAddress)).performUpkeep("");
         vm.stopBroadcast();
     }
 
