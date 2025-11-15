@@ -4,8 +4,11 @@ pragma solidity ^0.8.19;
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {
+    AutomationCompatibleInterface
+} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
-contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
+contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleInterface {
     enum RaffleState {
         OPEN,
         DRAWING
@@ -15,13 +18,13 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     uint32 private constant NUM_WORDS = 1;
     address private constant NO_WINNER = address(0);
     uint256 private constant NO_PRIZE = 0;
+    bytes private constant EMPTY_PERFORM_DATA = "";
 
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     address payable[] private s_players;
     mapping(address => bool) private s_playersInRaffle;
     uint256 private s_lastTimeStamp;
-    address private immutable i_operator;
     bytes32 private immutable i_keyHash;
     uint256 private immutable i_subscriptionId;
     uint32 private immutable i_callbackGasLimit;
@@ -36,8 +39,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     error Raffle__SendMoreToEnterRaffle();
-    error Raffle__NotEnoughTimeHasPassed();
-    error Raffle__NotOperator();
     error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
     error Raffle__InvalidInterval();
@@ -45,6 +46,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     error Raffle__DrawingInProgress();
     error Raffle__RaffleIsNotDrawing();
     error Raffle__InvalidRequestId();
+    error Raffle__DrawingNotAllowed();
 
     constructor(
         uint256 entranceFee,
@@ -65,7 +67,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         i_entranceFee = entranceFee;
         i_interval = interval;
         s_lastTimeStamp = block.timestamp;
-        i_operator = msg.sender;
         i_keyHash = keyHash;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
@@ -79,7 +80,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
             revert Raffle__SendMoreToEnterRaffle();
         }
 
-        if (s_raffleState != RaffleState.OPEN) {
+        if (_isRaffleInState(RaffleState.DRAWING)) {
             revert Raffle__DrawingInProgress();
         }
 
@@ -97,18 +98,18 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     }
 
     // slither-disable-next-line reentrancy-events
-    function pickWinner() external {
-        if (false == _isLotteryOperator(msg.sender)) {
-            revert Raffle__NotOperator();
-        }
-
-        if (_isEntryWindowOpen()) {
-            revert Raffle__NotEnoughTimeHasPassed();
+    function performUpkeep(
+        bytes calldata /* performData */
+    )
+        external
+        override
+    {
+        if (_isEntryWindowOpen() || _isRaffleInState(RaffleState.DRAWING)) {
+            revert Raffle__DrawingNotAllowed();
         }
 
         if (s_players.length == 0) {
             uint256 roundNumber = s_roundNumber;
-
             _resetRaffleForNextRound();
             emit RoundCompleted(roundNumber, NO_WINNER, NO_PRIZE);
             return;
@@ -116,7 +117,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
 
         s_raffleState = RaffleState.DRAWING;
         s_requestId = _requestRandomWords();
-
         emit DrawRequested(s_roundNumber);
     }
 
@@ -128,6 +128,20 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         return s_playersInRaffle[player];
     }
 
+    function checkUpkeep(
+        bytes memory /* checkData */
+    )
+        public
+        view
+        override
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
+    {
+        return (_isEntryWindowClosed() && _isRaffleInState(RaffleState.OPEN), EMPTY_PERFORM_DATA);
+    }
+
     // slither-disable-next-line reentrancy-eth
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords)
         internal
@@ -135,7 +149,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         override
         nonReentrant
     {
-        if (s_raffleState != RaffleState.DRAWING) {
+        if (!_isRaffleInState(RaffleState.DRAWING)) {
             revert Raffle__RaffleIsNotDrawing();
         }
 
@@ -195,7 +209,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         return !_isEntryWindowOpen();
     }
 
-    function _isLotteryOperator(address user) private view returns (bool) {
-        return user == i_operator;
+    function _isRaffleInState(RaffleState state) private view returns (bool) {
+        return s_raffleState == state;
     }
 }

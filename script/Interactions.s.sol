@@ -2,25 +2,25 @@
 pragma solidity ^0.8.19;
 
 import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
-import {Script, console} from "forge-std/Script.sol";
+import {Script} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
 
-contract RafflePickWinner is Script {
-    error RafflePickWinner__InvalidContractAddress();
+contract PerformUpkeep is Script {
+    error PerformUpkeep__InvalidContractAddress();
 
-    function pickWinner(address contractAddress) public {
+    function performUpkeep(address contractAddress) public {
         if (contractAddress == address(0)) {
-            revert RafflePickWinner__InvalidContractAddress();
+            revert PerformUpkeep__InvalidContractAddress();
         }
 
         vm.startBroadcast();
-        Raffle(payable(contractAddress)).pickWinner();
+        Raffle(payable(contractAddress)).performUpkeep("");
         vm.stopBroadcast();
     }
 
     function run() external {
         address contractAddress = DevOpsTools.get_most_recent_deployment("Raffle", block.chainid);
 
-        pickWinner(contractAddress);
+        performUpkeep(contractAddress);
     }
 }

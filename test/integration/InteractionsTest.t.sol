@@ -5,7 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
-import {RafflePickWinner} from "../../script/Interactions.s.sol";
+import {PerformUpkeep} from "../../script/Interactions.s.sol";
 import {MyVRFCoordinatorV2_5Mock} from "../mocks/MyVRFCoordinatorV2_5Mock.sol";
 import {LogHelpers} from "../helpers/LogHelpers.sol";
 
@@ -55,8 +55,8 @@ contract InteractionsTest is Test {
         vm.warp(block.timestamp + 301);
 
         vm.recordLogs();
-        RafflePickWinner rafflePickWinner = new RafflePickWinner();
-        rafflePickWinner.pickWinner(address(raffle));
+        PerformUpkeep performUpkeepScript = new PerformUpkeep();
+        performUpkeepScript.performUpkeep(address(raffle));
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(1, player2, expectedPrizePool);
