@@ -149,7 +149,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         override
         nonReentrant
     {
-        if (_isRaffleInState(RaffleState.OPEN)) {
+        if (!_isRaffleInState(RaffleState.DRAWING)) {
             revert Raffle__RaffleIsNotDrawing();
         }
 
