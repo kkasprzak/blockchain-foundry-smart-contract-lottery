@@ -71,9 +71,5 @@ contract InteractionsTest is Test {
         assertTrue(winner == player2);
         assertEq(actualPrizeTransferred, expectedPrizePool);
         assertEq(address(raffle).balance, 0);
-
-        assertFalse(raffle.isPlayerInRaffle(player1));
-        assertFalse(raffle.isPlayerInRaffle(player2));
-        assertFalse(raffle.isPlayerInRaffle(player3));
     }
 }

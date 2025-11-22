@@ -184,6 +184,119 @@ Follow these Solidity style guide formatting rules:
 - Use `constant` keyword for compile-time constants
 - Prefer `uint256` over smaller uints for gas efficiency (unless packing structs)
 
+## Code Quality Anti-Patterns (CRITICAL - NEVER VIOLATE)
+
+These are common mistakes that must be avoided. Violating these rules results in poor code quality and maintainability issues.
+
+### 1. NO Unnecessary Comments
+
+**Rule:** Code must be self-explaining through clear naming and structure.
+
+**WHY:** Comments indicate the code is not self-documenting. If you need comments to explain what code does, the code is poorly written.
+
+**WRONG:**
+```solidity
+// Round 1: randomWord 0 % 4 = 0 -> player1 (index 0)
+assertEq(_runRound(raffle, interval, 0), player1);
+```
+
+**CORRECT:**
+```solidity
+assertEq(_runRound(raffle, interval, 0), player1);
+```
+
+The method names `_runRound()` and test structure make the intent clear without comments.
+
+### 2. NO Methods With "AND" in Name
+
+**Rule:** Method names containing "AND" indicate Single Responsibility Principle violation.
+
+**WHY:** A method should do ONE thing. "AND" in the name means it's doing multiple things, violating SRP.
+
+**WRONG:**
+```solidity
+function _runRoundAndVerifyWinner(Raffle raffle, uint256 interval, uint256 randomWord, address expectedWinner) private {
+    // Runs round AND verifies winner - TWO responsibilities
+}
+```
+
+**CORRECT:**
+```solidity
+function _runRound(Raffle raffle, uint256 interval, uint256 randomWord) private returns (address) {
+    // Only runs round and returns winner - ONE responsibility
+}
+
+// In test:
+assertEq(_runRound(raffle, interval, 0), player1);  // Verification separate
+```
+
+### 3. NO Unnecessary Temporary Variables
+
+**Rule:** If a variable is used exactly once, inline it.
+
+**WHY:** Temporary variables add noise without adding clarity. Direct usage is clearer.
+
+**WRONG:**
+```solidity
+address winner1 = _runRound(raffle, interval, 0);
+assertEq(winner1, player1);
+```
+
+**CORRECT:**
+```solidity
+assertEq(_runRound(raffle, interval, 0), player1);
+```
+
+### 4. Command-Query Separation (CQS)
+
+**Rule:** Methods should either DO something (command) OR return data (query), never both.
+
+**WHY:** Mixing commands and queries makes code harder to understand and test. Side effects should be explicit.
+
+**WRONG:**
+```solidity
+function _runRoundAndVerifyWinner(...) private {
+    // Executes round (command) AND asserts result (query) - violates CQS
+    address winner = _executeRound();
+    assertEq(winner, expectedWinner);  // Assertion inside helper
+}
+```
+
+**CORRECT:**
+```solidity
+function _runRound(...) private returns (address) {
+    // Command: executes round
+    // Query: returns winner data
+    return winner;
+}
+
+// In test (query/assertion separate):
+assertEq(_runRound(raffle, interval, 0), player1);
+```
+
+### 5. NO Assertions in Helper Methods
+
+**Rule:** Test helper methods return data, test methods perform assertions.
+
+**WHY:** Helpers with assertions are not reusable. Separating data retrieval from verification makes helpers flexible for different test scenarios.
+
+**WRONG:**
+```solidity
+function _verifyWinner(address actualWinner, address expectedWinner) private {
+    assertEq(actualWinner, expectedWinner);  // Assertion in helper
+}
+```
+
+**CORRECT:**
+```solidity
+function _runRound(...) private returns (address) {
+    return winner;  // Returns data only
+}
+
+// In test:
+assertEq(_runRound(...), expectedWinner);  // Assertion in test
+```
+
 ## Task-Based Development Workflow
 
 ### Task Management
@@ -217,13 +330,46 @@ Follow these Solidity style guide formatting rules:
 ### Working on the Task
 
 - Follow TDD and Pair Programming practices (see skill documentation)
-- Commit frequently - better to commit often than rarely
+- **Commit frequently** - better to commit often than rarely
+  - Commit after completing each logical unit of work
+  - Commit BEFORE attempting risky refactoring
+  - Use WIP commits if needed - can be cleaned up later with `git rebase`
 - Use conventional commit format:
   - `feat:` - new feature
   - `fix:` - bug fix
   - `refactor:` - code refactoring
   - `test:` - adding/updating tests
   - `docs:` - documentation
+
+### Git Safety Protocol
+
+**CRITICAL: Protect your work from accidental loss**
+
+1. **NEVER use `git checkout <file>` without committed work**
+   - This permanently deletes uncommitted changes
+   - Always commit or stash first
+
+2. **Before risky operations:**
+   ```bash
+   git add -A
+   git commit -m "wip: before risky refactor"
+   ```
+
+3. **Safe alternatives to dangerous commands:**
+   - Instead of `git checkout <file>` → use `git stash` first
+   - Instead of `git reset --hard` → commit first, then reset if needed
+   - Use `git stash` to temporarily save work
+
+4. **Recovery options:**
+   - If you committed: `git reset --hard <commit-hash>` to go back
+   - If you stashed: `git stash pop` to recover
+   - If you lost work: check conversation history to recreate
+
+5. **Tool usage warnings:**
+   - `replace_all=true` in Edit tool is DANGEROUS
+   - Can cause infinite recursion or unexpected replacements
+   - Use only for simple, mechanical replacements
+   - Test immediately after using `replace_all`
 
 ### Creating Pull Request
 

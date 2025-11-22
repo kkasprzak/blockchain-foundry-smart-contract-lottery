@@ -23,7 +23,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     address payable[] private s_players;
-    mapping(address => bool) private s_playersInRaffle;
     uint256 private s_lastTimeStamp;
     bytes32 private immutable i_keyHash;
     uint256 private immutable i_subscriptionId;
@@ -42,7 +41,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
     error Raffle__InvalidInterval();
-    error Raffle__PlayerIsAlreadyInRaffle();
     error Raffle__DrawingInProgress();
     error Raffle__RaffleIsNotDrawing();
     error Raffle__InvalidRequestId();
@@ -88,10 +86,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
             revert Raffle__EntryWindowIsClosed();
         }
 
-        if (isPlayerInRaffle(msg.sender)) {
-            revert Raffle__PlayerIsAlreadyInRaffle();
-        }
-
         _addPlayerToRaffle(msg.sender);
 
         emit RaffleEntered(s_roundNumber, msg.sender);
@@ -122,10 +116,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
-    }
-
-    function isPlayerInRaffle(address player) public view returns (bool) {
-        return s_playersInRaffle[player];
     }
 
     function checkUpkeep(
@@ -173,9 +163,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     }
 
     function _resetRaffleForNextRound() private {
-        for (uint256 i = 0; i < s_players.length; i++) {
-            s_playersInRaffle[s_players[i]] = false;
-        }
         s_players = new address payable[](0);
         s_lastTimeStamp = block.timestamp;
         s_raffleState = RaffleState.OPEN;
@@ -184,7 +171,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function _addPlayerToRaffle(address player) private {
         s_players.push(payable(player));
-        s_playersInRaffle[player] = true;
     }
 
     function _requestRandomWords() private returns (uint256) {

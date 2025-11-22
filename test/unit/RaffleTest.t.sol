@@ -87,7 +87,7 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
 
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         vm.expectRevert(Raffle.Raffle__DrawingInProgress.selector);
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
@@ -127,7 +127,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, overpayment);
     }
 
-    function test_RaffleRevertsWhenPlayerIsAlreadyInRaffle() public {
+    function test_PlayerCanEnterRaffleMultipleTimes() public {
         uint256 entranceFee = 0.01 ether;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
         address player = makeAddr("player");
@@ -135,9 +135,60 @@ contract RaffleTest is Test {
         _fundPlayerForRaffle(player, 1 ether);
 
         _enterRaffleAsPlayer(raffle, player, entranceFee);
-
-        vm.expectRevert(Raffle.Raffle__PlayerIsAlreadyInRaffle.selector);
         _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+    }
+
+    function test_MultipleEntriesIncreasesPrizePool() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        uint256 expectedPrizePool = entranceFee * 4;
+        uint256 expectedWinnerBalance = 1 ether - 3 * entranceFee + expectedPrizePool;
+
+        vm.recordLogs();
+        _startDraw(raffle);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+
+        address winner = vm.getRecordedLogs().getWinner();
+
+        assertEq(address(winner).balance, expectedWinnerBalance);
+    }
+
+    function test_MultipleEntriesGiveProportionalChances() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 10 ether);
+        _fundPlayerForRaffle(player2, 10 ether);
+
+        _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
+        assertEq(_runRound(raffle, interval, 0), player1);
+
+        _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
+        assertEq(_runRound(raffle, interval, 1), player1);
+
+        _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
+        assertEq(_runRound(raffle, interval, 2), player1);
+
+        _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
+        assertEq(_runRound(raffle, interval, 3), player2);
     }
 
     function test_RaffleRevertsWhenEntryWindowIsClosed() public {
@@ -153,23 +204,6 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
     }
 
-    function test_RaffleRecordsPlayerWhenTheyEnter() public {
-        uint256 entranceFee = 0.01 ether;
-        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
-        address player = makeAddr("player");
-
-        _fundPlayerForRaffle(player, 1 ether);
-        _enterRaffleAsPlayer(raffle, player, entranceFee);
-
-        assertTrue(raffle.isPlayerInRaffle(player));
-    }
-
-    function test_RaffleReturnsFalseForPlayerNotInRaffle() public {
-        Raffle raffle = _createValidRaffle();
-
-        assertFalse(raffle.isPlayerInRaffle(makeAddr("player")));
-    }
-
     function test_RaffleEmitsEventOnEntrance() public {
         uint256 entranceFee = 0.01 ether;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
@@ -183,29 +217,25 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
     }
 
-    function test_CheckUpkeepReturnsFalseWhenTimeHasNotPassed() public {
+    function test_EntryWindowIsOpenWhenIntervalHasNotPassed() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
 
-        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
-
-        assertFalse(upkeepNeeded);
+        _assertEntryWindowIsOpen(raffle);
     }
 
-    function test_CheckUpkeepReturnsTrueWhenTimeHasPassedAndRaffleIsOpen() public {
+    function test_EntryWindowIsClosedWhenIntervalHasPassed() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
 
         _waitForDrawTime(interval + 1);
 
-        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
-
-        assertTrue(upkeepNeeded);
+        _assertEntryWindowIsClosed(raffle);
     }
 
-    function test_CheckUpkeepReturnsFalseWhenRaffleIsDrawing() public {
+    function test_EntryWindowIsClosedDuringDraw() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -215,23 +245,21 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
 
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
-        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
-
-        assertFalse(upkeepNeeded);
+        _assertEntryWindowIsOpen(raffle);
     }
 
-    function test_PerformUpkeepRevertsWhenTimeHasNotPassed() public {
+    function test_DrawCannotStartWhenEntryWindowIsOpen() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
 
         vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
     }
 
-    function test_PerformUpkeepRevertsWhenRaffleIsDrawing() public {
+    function test_DrawCannotStartWhenDrawIsInProgress() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -241,13 +269,13 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
 
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
     }
 
-    function test_PerformUpkeepClosesRoundWithoutPlayers() public {
+    function test_RoundCompletesWithNoWinnerWhenNoPlayersEntered() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -257,10 +285,10 @@ contract RaffleTest is Test {
         vm.expectEmit(true, true, true, false, address(raffle));
         emit RoundCompleted(FIRST_ROUND, NO_WINNER, NO_PRIZE);
 
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
     }
 
-    function test_PerformUpkeepStartsDrawWithPlayers() public {
+    function test_DrawStartsWhenEntryWindowClosesWithPlayers() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -279,7 +307,7 @@ contract RaffleTest is Test {
         vm.expectEmit(true, false, false, false, address(raffle));
         emit DrawRequested(FIRST_ROUND);
 
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
     }
 
     function test_PickWinnerEmitsDrawRequestedEvent() public {
@@ -296,7 +324,7 @@ contract RaffleTest is Test {
         vm.expectEmit(true, false, false, false, address(raffle));
         emit DrawRequested(FIRST_ROUND);
 
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
     }
 
     function test_PickWinnerSelectsWinnerFromParticipants() public {
@@ -315,7 +343,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
 
@@ -343,97 +371,12 @@ contract RaffleTest is Test {
         uint256 totalPrizePool = entranceFee * 3;
 
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
         uint256 expectedWinnerBalance = 1 ether - entranceFee + totalPrizePool;
 
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
 
         assertEq(player2.balance, expectedWinnerBalance);
-    }
-
-    function test_PickWinnerClearsParticipantsForNextRound() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player1 = makeAddr("player1");
-        address player2 = makeAddr("player2");
-
-        _fundPlayerForRaffle(player1, 1 ether);
-        _fundPlayerForRaffle(player2, 1 ether);
-
-        _enterRaffleAsPlayer(raffle, player1, entranceFee);
-        _enterRaffleAsPlayer(raffle, player2, entranceFee);
-
-        assertTrue(raffle.isPlayerInRaffle(player1));
-        assertTrue(raffle.isPlayerInRaffle(player2));
-
-        _waitForDrawTime(interval + 1);
-
-        vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
-
-        assertFalse(raffle.isPlayerInRaffle(player1));
-        assertFalse(raffle.isPlayerInRaffle(player2));
-    }
-
-    function test_RafflePicksWinnerResetsEntryWindowForNextRound() public {
-        uint256 interval = 30;
-        uint256 entranceFee = 0.01 ether;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player1 = makeAddr("player1");
-        address player2 = makeAddr("player2");
-
-        _fundPlayerForRaffle(player1, 1 ether);
-        _fundPlayerForRaffle(player2, 1 ether);
-
-        _enterRaffleAsPlayer(raffle, player1, entranceFee);
-
-        _waitForDrawTime(interval + 1);
-        vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
-
-        _enterRaffleAsPlayer(raffle, player2, entranceFee);
-
-        assertFalse(raffle.isPlayerInRaffle(player1));
-        assertTrue(raffle.isPlayerInRaffle(player2));
-    }
-
-    function test_PickWinnerResetsRoundWhenNoParticipants() public {
-        uint256 interval = 30;
-        uint256 entranceFee = 0.01 ether;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player = makeAddr("player");
-
-        _fundPlayerForRaffle(player, 1 ether);
-
-        _waitForDrawTime(interval + 1);
-
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
-
-        _enterRaffleAsPlayer(raffle, player, entranceFee);
-        assertTrue(raffle.isPlayerInRaffle(player));
-    }
-
-    function test_PickWinnerContinuesWhenTransferFails() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-
-        MaliciousWinnerRevertsOnReceive maliciousWinner = new MaliciousWinnerRevertsOnReceive();
-
-        _fundPlayerForRaffle(address(maliciousWinner), 1 ether);
-
-        _enterRaffleAsPlayer(raffle, address(maliciousWinner), entranceFee);
-
-        _waitForDrawTime(interval + 1);
-
-        vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
-
-        assertFalse(raffle.isPlayerInRaffle(address(maliciousWinner)));
     }
 
     function test_PickWinnerEmitsPrizeTransferFailedWhenTransferReverts() public {
@@ -451,7 +394,7 @@ contract RaffleTest is Test {
         uint256 expectedPrizeAmount = entranceFee;
 
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
@@ -475,12 +418,29 @@ contract RaffleTest is Test {
         uint256 expectedPrizeAmount = entranceFee;
 
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
 
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+    }
+
+    function test_EntryWindowResetsEvenWhenPrizeTransferFails() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        MaliciousWinnerRevertsOnReceive maliciousWinner = new MaliciousWinnerRevertsOnReceive();
+
+        _fundPlayerForRaffle(address(maliciousWinner), 1 ether);
+        _enterRaffleAsPlayer(raffle, address(maliciousWinner), entranceFee);
+
+        _completeRoundWithFailedTransfer(raffle, interval);
+
+        _assertEntryWindowIsOpen(raffle);
+
+        _waitForDrawTime(interval + 1);
+        _assertEntryWindowIsClosed(raffle);
     }
 
     function test_RoundCompletedEventEmittedAfterWinnerSelection() public {
@@ -495,7 +455,7 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         uint256 expectedRoundNumber = 1;
         uint256 expectedPrize = entranceFee;
@@ -519,7 +479,7 @@ contract RaffleTest is Test {
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(expectedRoundNumber, expectedWinner, expectedPrize);
 
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
     }
 
     function test_RoundNumberIncrementsAcrossMultipleRounds() public {
@@ -534,7 +494,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(1, player, entranceFee);
@@ -544,7 +504,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(2, player, entranceFee);
@@ -554,7 +514,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _waitForDrawTime(interval + 1);
         vm.recordLogs();
-        raffle.performUpkeep(EMPTY_CHECK_DATA);
+        _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(3, player, entranceFee);
@@ -594,6 +554,52 @@ contract RaffleTest is Test {
 
     function _fundPlayerForRaffle(address player, uint256 amount) private {
         vm.deal(player, amount);
+    }
+
+    function _setupRaffleEntriesForProportionalTest(
+        Raffle raffle,
+        address player1,
+        address player2,
+        uint256 entranceFee
+    ) private {
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+    }
+
+    function _runRound(Raffle raffle, uint256 interval, uint256 randomWord) private returns (address) {
+        _waitForDrawTime(interval + 1);
+
+        vm.recordLogs();
+        _startDraw(raffle);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), randomWord
+        );
+
+        return vm.getRecordedLogs().getWinner();
+    }
+
+    function _completeRoundWithFailedTransfer(Raffle raffle, uint256 interval) private {
+        _waitForDrawTime(interval + 1);
+
+        vm.recordLogs();
+        _startDraw(raffle);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+    }
+
+    function _assertEntryWindowIsOpen(Raffle raffle) private {
+        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
+        assertFalse(upkeepNeeded);
+    }
+
+    function _assertEntryWindowIsClosed(Raffle raffle) private {
+        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
+        assertTrue(upkeepNeeded);
+    }
+
+    function _startDraw(Raffle raffle) private {
+        raffle.performUpkeep(EMPTY_CHECK_DATA);
     }
 }
 
