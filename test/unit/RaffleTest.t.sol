@@ -16,6 +16,10 @@ contract RaffleTest is Test {
     address private constant NO_WINNER = address(0);
     uint256 private constant NO_PRIZE = 0;
     uint256 private constant FIRST_ROUND = 1;
+    uint256 private constant FIRST_ENTRY_WINS = 0;
+    uint256 private constant SECOND_ENTRY_WINS = 1;
+    uint256 private constant THIRD_ENTRY_WINS = 2;
+    uint256 private constant FOURTH_ENTRY_WINS = 3;
 
     MyVRFCoordinatorV2_5Mock private s_vrfCoordinatorMock;
     uint256 private s_subscriptionId;
@@ -161,7 +165,9 @@ contract RaffleTest is Test {
 
         vm.recordLogs();
         _startDraw(raffle);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
 
         address winner = vm.getRecordedLogs().getWinner();
 
@@ -179,16 +185,16 @@ contract RaffleTest is Test {
         _fundPlayerForRaffle(player2, 10 ether);
 
         _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
-        assertEq(_runRound(raffle, interval, 0), player1);
+        assertEq(_runRound(raffle, interval, FIRST_ENTRY_WINS), player1);
 
         _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
-        assertEq(_runRound(raffle, interval, 1), player1);
+        assertEq(_runRound(raffle, interval, SECOND_ENTRY_WINS), player1);
 
         _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
-        assertEq(_runRound(raffle, interval, 2), player1);
+        assertEq(_runRound(raffle, interval, THIRD_ENTRY_WINS), player1);
 
         _setupRaffleEntriesForProportionalTest(raffle, player1, player2, entranceFee);
-        assertEq(_runRound(raffle, interval, 3), player2);
+        assertEq(_runRound(raffle, interval, FOURTH_ENTRY_WINS), player2);
     }
 
     function test_RaffleRevertsWhenEntryWindowIsClosed() public {
@@ -399,7 +405,9 @@ contract RaffleTest is Test {
         vm.expectEmit(true, true, false, true, address(raffle));
         emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
 
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
     }
 
     function test_PickWinnerBlocksReentrancyAttackDuringPrizeTransfer() public {
@@ -423,7 +431,9 @@ contract RaffleTest is Test {
         vm.expectEmit(true, true, false, true, address(raffle));
         emit PrizeTransferFailed(1, address(maliciousWinner), expectedPrizeAmount);
 
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
     }
 
     function test_EntryWindowResetsEvenWhenPrizeTransferFails() public {
@@ -441,6 +451,23 @@ contract RaffleTest is Test {
 
         _waitForDrawTime(interval + 1);
         _assertEntryWindowIsClosed(raffle);
+    }
+
+    function test_NewRoundStartsWithoutPreviousParticipants() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 10 ether);
+        _fundPlayerForRaffle(player2, 10 ether);
+
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        assertEq(_runRound(raffle, interval, FIRST_ENTRY_WINS), player1);
+
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+        assertEq(_runRound(raffle, interval, FIRST_ENTRY_WINS), player2);
     }
 
     function test_RoundCompletedEventEmittedAfterWinnerSelection() public {
@@ -463,7 +490,9 @@ contract RaffleTest is Test {
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(expectedRoundNumber, player, expectedPrize);
 
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
     }
 
     function test_RoundCompletedEventEmittedWhenNoParticipants() public {
@@ -498,7 +527,9 @@ contract RaffleTest is Test {
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(1, player, entranceFee);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
 
         // Round 2
         _enterRaffleAsPlayer(raffle, player, entranceFee);
@@ -508,7 +539,9 @@ contract RaffleTest is Test {
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(2, player, entranceFee);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
 
         // Round 3
         _enterRaffleAsPlayer(raffle, player, entranceFee);
@@ -518,7 +551,9 @@ contract RaffleTest is Test {
 
         vm.expectEmit(true, true, false, true, address(raffle));
         emit RoundCompleted(3, player, entranceFee);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
     }
 
     function _createValidRaffle() private returns (Raffle) {
@@ -585,7 +620,9 @@ contract RaffleTest is Test {
 
         vm.recordLogs();
         _startDraw(raffle);
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 0);
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
     }
 
     function _assertEntryWindowIsOpen(Raffle raffle) private {
