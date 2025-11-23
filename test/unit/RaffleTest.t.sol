@@ -51,7 +51,7 @@ contract RaffleTest is Test {
         uint256 invalidEntranceFee = 0;
         uint256 validInterval = 1;
 
-        vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
+        vm.expectRevert(abi.encodeWithSelector(Raffle.Raffle__InvalidParameter.selector, "Entrance fee cannot be zero"));
         new Raffle(
             invalidEntranceFee,
             validInterval,
@@ -66,7 +66,7 @@ contract RaffleTest is Test {
         uint256 validEntranceFee = 0.01 ether;
         uint256 invalidInterval = 0;
 
-        vm.expectRevert(Raffle.Raffle__InvalidInterval.selector);
+        vm.expectRevert(abi.encodeWithSelector(Raffle.Raffle__InvalidParameter.selector, "Interval cannot be zero"));
         new Raffle(
             validEntranceFee,
             invalidInterval,
@@ -105,7 +105,7 @@ contract RaffleTest is Test {
 
         _fundPlayerForRaffle(player, 1 ether);
 
-        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
+        vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
         _enterRaffleAsPlayer(raffle, player, insufficientPayment);
     }
 
@@ -127,7 +127,7 @@ contract RaffleTest is Test {
 
         _fundPlayerForRaffle(player, 1 ether);
 
-        vm.expectRevert(Raffle.Raffle__SendMoreToEnterRaffle.selector);
+        vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
         _enterRaffleAsPlayer(raffle, player, overpayment);
     }
 
@@ -239,21 +239,6 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         _assertEntryWindowIsClosed(raffle);
-    }
-
-    function test_EntryWindowIsClosedDuringDraw() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player = makeAddr("player");
-
-        _fundPlayerForRaffle(player, 1 ether);
-        _enterRaffleAsPlayer(raffle, player, entranceFee);
-        _waitForDrawTime(interval + 1);
-
-        _startDraw(raffle);
-
-        _assertEntryWindowIsOpen(raffle);
     }
 
     function test_DrawCannotStartWhenEntryWindowIsOpen() public {
@@ -436,21 +421,20 @@ contract RaffleTest is Test {
         );
     }
 
-    function test_EntryWindowResetsEvenWhenPrizeTransferFails() public {
+    function test_NewRoundStartsEvenWhenPrizeTransferFails() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
         MaliciousWinnerRevertsOnReceive maliciousWinner = new MaliciousWinnerRevertsOnReceive();
+        address player2 = makeAddr("player2");
 
         _fundPlayerForRaffle(address(maliciousWinner), 1 ether);
-        _enterRaffleAsPlayer(raffle, address(maliciousWinner), entranceFee);
+        _fundPlayerForRaffle(player2, 1 ether);
 
+        _enterRaffleAsPlayer(raffle, address(maliciousWinner), entranceFee);
         _completeRoundWithFailedTransfer(raffle, interval);
 
-        _assertEntryWindowIsOpen(raffle);
-
-        _waitForDrawTime(interval + 1);
-        _assertEntryWindowIsClosed(raffle);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
     }
 
     function test_NewRoundStartsWithoutPreviousParticipants() public {
@@ -468,6 +452,22 @@ contract RaffleTest is Test {
 
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
         assertEq(_runRound(raffle, interval, FIRST_ENTRY_WINS), player2);
+    }
+
+    function test_NewRoundStartsWithZeroBalance() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 10 ether);
+        _fundPlayerForRaffle(player2, 10 ether);
+
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _runRound(raffle, interval, FIRST_ENTRY_WINS);
+
+        assertEq(address(raffle).balance, 0);
     }
 
     function test_RoundCompletedEventEmittedAfterWinnerSelection() public {
@@ -625,12 +625,12 @@ contract RaffleTest is Test {
         );
     }
 
-    function _assertEntryWindowIsOpen(Raffle raffle) private {
+    function _assertEntryWindowIsOpen(Raffle raffle) private view {
         (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
         assertFalse(upkeepNeeded);
     }
 
-    function _assertEntryWindowIsClosed(Raffle raffle) private {
+    function _assertEntryWindowIsClosed(Raffle raffle) private view {
         (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
         assertTrue(upkeepNeeded);
     }

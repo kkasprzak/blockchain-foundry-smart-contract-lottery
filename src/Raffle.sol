@@ -37,10 +37,9 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     event DrawRequested(uint256 indexed roundNumber);
     event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
-    error Raffle__SendMoreToEnterRaffle();
-    error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
-    error Raffle__InvalidInterval();
+    error Raffle__EntryWindowIsClosed();
+    error Raffle__InvalidParameter(string message);
     error Raffle__DrawingInProgress();
     error Raffle__RaffleIsNotDrawing();
     error Raffle__InvalidRequestId();
@@ -55,11 +54,11 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         uint32 callbackGasLimit
     ) VRFConsumerBaseV2Plus(vrfCoordinator) {
         if (entranceFee == 0) {
-            revert Raffle__InvalidEntranceFee();
+            revert Raffle__InvalidParameter("Entrance fee cannot be zero");
         }
 
         if (interval == 0) {
-            revert Raffle__InvalidInterval();
+            revert Raffle__InvalidParameter("Interval cannot be zero");
         }
 
         i_entranceFee = entranceFee;
@@ -75,7 +74,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function enterRaffle() external payable {
         if (msg.value != i_entranceFee) {
-            revert Raffle__SendMoreToEnterRaffle();
+            revert Raffle__InvalidEntranceFee();
         }
 
         if (_isRaffleInState(RaffleState.DRAWING)) {
