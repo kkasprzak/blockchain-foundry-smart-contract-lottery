@@ -303,7 +303,7 @@ contract RaffleTest is Test {
         assertEq(vm.getRecordedLogs().getWinner(), player2);
     }
 
-    function test_PickWinnerTransfersPrizeToWinner() public {
+    function test_WinnerReceivesPrizeAfterDrawCompletes() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
