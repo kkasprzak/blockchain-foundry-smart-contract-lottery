@@ -263,6 +263,31 @@ contract RaffleTest is Test {
         _startDraw(raffle);
     }
 
+    function test_EventEmittedWhenDrawCompletesWithWinner() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+
+        vm.recordLogs();
+        _startDraw(raffle);
+
+        uint256 expectedRoundNumber = 1;
+        uint256 expectedPrize = entranceFee;
+
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit DrawCompleted(expectedRoundNumber, player, expectedPrize);
+
+        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
+            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
+        );
+    }
+
     function test_EventEmittedWhenDrawStarts() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
@@ -430,31 +455,6 @@ contract RaffleTest is Test {
         _runRound(raffle, interval, FIRST_ENTRY_WINS);
 
         assertEq(address(raffle).balance, 0);
-    }
-
-    function test_DrawCompletedEventEmittedAfterWinnerSelection() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player = makeAddr("player");
-
-        _fundPlayerForRaffle(player, 1 ether);
-        _enterRaffleAsPlayer(raffle, player, entranceFee);
-
-        _waitForDrawTime(interval + 1);
-
-        vm.recordLogs();
-        _startDraw(raffle);
-
-        uint256 expectedRoundNumber = 1;
-        uint256 expectedPrize = entranceFee;
-
-        vm.expectEmit(true, true, false, true, address(raffle));
-        emit DrawCompleted(expectedRoundNumber, player, expectedPrize);
-
-        s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
-            vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
-        );
     }
 
     function test_RoundNumberIncrementsAcrossMultipleRounds() public {
