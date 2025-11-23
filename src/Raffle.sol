@@ -23,7 +23,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     address payable[] private s_players;
-    mapping(address => bool) private s_playersInRaffle;
     uint256 private s_lastTimeStamp;
     bytes32 private immutable i_keyHash;
     uint256 private immutable i_subscriptionId;
@@ -36,13 +35,11 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
     event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested(uint256 indexed roundNumber);
-    event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
+    event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
-    error Raffle__SendMoreToEnterRaffle();
-    error Raffle__EntryWindowIsClosed();
     error Raffle__InvalidEntranceFee();
-    error Raffle__InvalidInterval();
-    error Raffle__PlayerIsAlreadyInRaffle();
+    error Raffle__EntryWindowIsClosed();
+    error Raffle__InvalidParameter(string message);
     error Raffle__DrawingInProgress();
     error Raffle__RaffleIsNotDrawing();
     error Raffle__InvalidRequestId();
@@ -57,11 +54,11 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         uint32 callbackGasLimit
     ) VRFConsumerBaseV2Plus(vrfCoordinator) {
         if (entranceFee == 0) {
-            revert Raffle__InvalidEntranceFee();
+            revert Raffle__InvalidParameter("Entrance fee cannot be zero");
         }
 
         if (interval == 0) {
-            revert Raffle__InvalidInterval();
+            revert Raffle__InvalidParameter("Interval cannot be zero");
         }
 
         i_entranceFee = entranceFee;
@@ -77,7 +74,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function enterRaffle() external payable {
         if (msg.value != i_entranceFee) {
-            revert Raffle__SendMoreToEnterRaffle();
+            revert Raffle__InvalidEntranceFee();
         }
 
         if (_isRaffleInState(RaffleState.DRAWING)) {
@@ -86,10 +83,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
         if (_isEntryWindowClosed()) {
             revert Raffle__EntryWindowIsClosed();
-        }
-
-        if (isPlayerInRaffle(msg.sender)) {
-            revert Raffle__PlayerIsAlreadyInRaffle();
         }
 
         _addPlayerToRaffle(msg.sender);
@@ -111,7 +104,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         if (s_players.length == 0) {
             uint256 roundNumber = s_roundNumber;
             _resetRaffleForNextRound();
-            emit RoundCompleted(roundNumber, NO_WINNER, NO_PRIZE);
+            emit DrawCompleted(roundNumber, NO_WINNER, NO_PRIZE);
             return;
         }
 
@@ -122,10 +115,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
-    }
-
-    function isPlayerInRaffle(address player) public view returns (bool) {
-        return s_playersInRaffle[player];
     }
 
     function checkUpkeep(
@@ -163,7 +152,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
         _resetRaffleForNextRound();
 
-        emit RoundCompleted(roundNumber, winner, prizeAmount);
+        emit DrawCompleted(roundNumber, winner, prizeAmount);
 
         (bool success,) = payable(winner).call{value: prizeAmount}("");
 
@@ -173,9 +162,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     }
 
     function _resetRaffleForNextRound() private {
-        for (uint256 i = 0; i < s_players.length; i++) {
-            s_playersInRaffle[s_players[i]] = false;
-        }
         s_players = new address payable[](0);
         s_lastTimeStamp = block.timestamp;
         s_raffleState = RaffleState.OPEN;
@@ -184,7 +170,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function _addPlayerToRaffle(address player) private {
         s_players.push(payable(player));
-        s_playersInRaffle[player] = true;
     }
 
     function _requestRandomWords() private returns (uint256) {

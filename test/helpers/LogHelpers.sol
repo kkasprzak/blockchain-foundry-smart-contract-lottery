@@ -5,13 +5,13 @@ import {Vm} from "forge-std/Vm.sol";
 
 library LogHelpers {
     function getWinner(Vm.Log[] memory logs) internal pure returns (address) {
-        bytes32 roundCompletedSig = keccak256("RoundCompleted(uint256,address,uint256)");
+        bytes32 drawCompletedSig = keccak256("DrawCompleted(uint256,address,uint256)");
         for (uint256 i = 0; i < logs.length; i++) {
-            if (logs[i].topics.length > 0 && logs[i].topics[0] == roundCompletedSig) {
+            if (logs[i].topics.length > 0 && logs[i].topics[0] == drawCompletedSig) {
                 return address(uint160(uint256(logs[i].topics[2])));
             }
         }
-        revert("RoundCompleted event not found");
+        revert("DrawCompleted event not found");
     }
 
     function getVrfRequestId(Vm.Log[] memory logs) internal pure returns (uint256) {
