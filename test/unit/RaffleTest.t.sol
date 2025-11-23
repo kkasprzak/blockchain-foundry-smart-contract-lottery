@@ -332,7 +332,7 @@ contract RaffleTest is Test {
         assertEq(player2.balance, expectedWinnerBalance);
     }
 
-    function test_PickWinnerEmitsPrizeTransferFailedWhenTransferReverts() public {
+    function test_EventEmittedWhenPrizeDeliveryFailsDueToMaliciousWinner() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
