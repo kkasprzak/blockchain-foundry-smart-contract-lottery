@@ -225,16 +225,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
     }
 
-    function test_DrawCannotStartBeforeTimeIntervalElapses() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-
-        vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
-        _startDraw(raffle);
-    }
-
-    function test_CannotStartAnotherDrawWhilePreviousDrawIsInProgress() public {
+    function test_EventEmittedWhenDrawStarts() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -242,23 +233,11 @@ contract RaffleTest is Test {
 
         _fundPlayerForRaffle(player, 1 ether);
         _enterRaffleAsPlayer(raffle, player, entranceFee);
-        _waitForDrawTime(interval + 1);
-
-        _startDraw(raffle);
-
-        vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
-        _startDraw(raffle);
-    }
-
-    function test_EventEmittedWhenDrawCompletesWithNoWinner() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
 
         _waitForDrawTime(interval + 1);
 
-        vm.expectEmit(true, true, true, false, address(raffle));
-        emit DrawCompleted(FIRST_ROUND, NO_WINNER, NO_PRIZE);
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit DrawRequested(FIRST_ROUND);
 
         _startDraw(raffle);
     }
@@ -286,23 +265,6 @@ contract RaffleTest is Test {
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
         );
-    }
-
-    function test_EventEmittedWhenDrawStarts() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player = makeAddr("player");
-
-        _fundPlayerForRaffle(player, 1 ether);
-        _enterRaffleAsPlayer(raffle, player, entranceFee);
-
-        _waitForDrawTime(interval + 1);
-
-        vm.expectEmit(true, false, false, false, address(raffle));
-        emit DrawRequested(FIRST_ROUND);
-
-        _startDraw(raffle);
     }
 
     function test_WinnerIsDrawnFromPlayersInCurrentRound() public {
@@ -355,6 +317,44 @@ contract RaffleTest is Test {
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
 
         assertEq(player2.balance, expectedWinnerBalance);
+    }
+
+    function test_EventEmittedWhenDrawCompletesWithNoWinner() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        _waitForDrawTime(interval + 1);
+
+        vm.expectEmit(true, true, true, false, address(raffle));
+        emit DrawCompleted(FIRST_ROUND, NO_WINNER, NO_PRIZE);
+
+        _startDraw(raffle);
+    }
+
+    function test_DrawCannotStartBeforeTimeIntervalElapses() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
+        _startDraw(raffle);
+    }
+
+    function test_CannotStartAnotherDrawWhilePreviousDrawIsInProgress() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _waitForDrawTime(interval + 1);
+
+        _startDraw(raffle);
+
+        vm.expectRevert(Raffle.Raffle__DrawingNotAllowed.selector);
+        _startDraw(raffle);
     }
 
     function test_EventEmittedWhenPrizeDeliveryFailsDueToMaliciousWinner() public {
