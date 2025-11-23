@@ -502,6 +502,7 @@ contract RaffleTest is Test {
         );
     }
 
+    // Chainlink Automation integration tests
     function test_EntryWindowIsOpenWhenIntervalHasNotPassed() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
