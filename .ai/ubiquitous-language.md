@@ -7,8 +7,11 @@ Domain-Driven Design (DDD) glossary of business concepts used in the Raffle proj
 ### Raffle
 The entire lottery system that manages the game. It coordinates player participation, time-based rules, prize distribution, and ensures fair winner selection across multiple game cycles.
 
+### Player
+A participant who enters a raffle round by paying the entry fee. Players compete for the prize pool within a specific round. The same person can be a player in multiple rounds, and can enter the same round multiple times (each entry increases their chances of winning).
+
 ### Drawing
-The process of randomly selecting a winner from all participants. This is a specific moment within a round where the system determines who wins the prize pool.
+The process of randomly selecting a winner from all players in the current round. This is a specific moment within a round where the system determines who wins the prize pool.
 
 **Drawing lifecycle:**
 1. **Draw starts** - The random selection process begins
@@ -16,6 +19,9 @@ The process of randomly selecting a winner from all participants. This is a spec
 3. **Draw completes** - Winner is determined and prize is transferred
 
 **Note:** "Drawing" refers to the ongoing selection process, while "draw" is the action itself (e.g., "start a draw").
+
+### Winner
+The player who is randomly drawn from all participants in a round. The winner receives the entire prize pool for that round. A winner is determined through a verifiably random drawing process, ensuring fairness. There is exactly one winner per round (or no winner if no players entered).
 
 ### Round
 A complete cycle of the lottery game from beginning to end. One round encompasses:
@@ -49,4 +55,6 @@ Raffle (the system)
 
 - **Raffle** = The entire system (exists permanently)
 - **Round** = One complete game cycle (repeatable)
-- **Drawing** = The winner selection moment (happens once per round)
+- **Player** = A participant who enters by paying the entry fee
+- **Drawing** = The winner selection process (happens once per round)
+- **Winner** = The player who is randomly drawn to receive the prize

@@ -280,7 +280,7 @@ contract RaffleTest is Test {
         _startDraw(raffle);
     }
 
-    function test_PickWinnerSelectsWinnerFromParticipants() public {
+    function test_WinnerIsDrawnFromPlayersInCurrentRound() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
