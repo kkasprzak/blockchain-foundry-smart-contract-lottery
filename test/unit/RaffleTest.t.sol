@@ -77,27 +77,30 @@ contract RaffleTest is Test {
         );
     }
 
-    function test_RaffleRevertsWhenEnteringDuringDrawTime() public {
+    function test_PlayerCanEnterRaffleRoundWithExactEntryFee() public {
         uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player1 = makeAddr("player1");
-        address player2 = makeAddr("player2");
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
 
-        _fundPlayerForRaffle(player1, 1 ether);
-        _fundPlayerForRaffle(player2, 1 ether);
+        _fundPlayerForRaffle(player, 1 ether);
 
-        _enterRaffleAsPlayer(raffle, player1, entranceFee);
-
-        _waitForDrawTime(interval + 1);
-
-        _startDraw(raffle);
-
-        vm.expectRevert(Raffle.Raffle__DrawingInProgress.selector);
-        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
     }
 
-    function test_RaffleRevertsWhenYouDontPayEnough() public {
+    function test_EventEmittedWhenPlayerEntersRaffleRound() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+
+        vm.expectEmit(true, true, false, false, address(raffle));
+        emit RaffleEntered(1, player);
+
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+    }
+
+    function test_PlayerCannotEnterRaffleRoundWhenPayingLessThanRequired() public {
         uint256 entranceFee = 0.01 ether;
         uint256 insufficientPayment = entranceFee / 10;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
@@ -109,17 +112,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, insufficientPayment);
     }
 
-    function test_RaffleAllowsUserToEnterWithEnoughFee() public {
-        uint256 entranceFee = 0.01 ether;
-        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
-        address player = makeAddr("player");
-
-        _fundPlayerForRaffle(player, 1 ether);
-
-        _enterRaffleAsPlayer(raffle, player, entranceFee);
-    }
-
-    function test_RaffleRevertsWhenOverpaying() public {
+    function test_PlayerCannotEnterRaffleRoundWhenPayingMoreThanRequired() public {
         uint256 entranceFee = 0.01 ether;
         uint256 overpayment = entranceFee * 2;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
@@ -141,6 +134,8 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _enterRaffleAsPlayer(raffle, player, entranceFee);
         _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        assertEq(address(raffle).balance, 3 * entranceFee);
     }
 
     function test_MultipleEntriesIncreasesPrizePool() public {
@@ -197,7 +192,7 @@ contract RaffleTest is Test {
         assertEq(_runRound(raffle, interval, FOURTH_ENTRY_WINS), player2);
     }
 
-    function test_RaffleRevertsWhenEntryWindowIsClosed() public {
+    function test_PlayerCannotEnterRaffleRoundAfterTimeIntervalElapses() public {
         uint256 interval = 30;
         uint256 entranceFee = 0.01 ether;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -210,17 +205,24 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, entranceFee);
     }
 
-    function test_RaffleEmitsEventOnEntrance() public {
+    function test_PlayerCannotEnterRaffleRoundWhileDrawingIsInProgress() public {
         uint256 entranceFee = 0.01 ether;
-        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
-        address player = makeAddr("player");
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
 
-        _fundPlayerForRaffle(player, 1 ether);
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
 
-        vm.expectEmit(true, true, false, false, address(raffle));
-        emit RaffleEntered(1, player);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
 
-        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _waitForDrawTime(interval + 1);
+
+        _startDraw(raffle);
+
+        vm.expectRevert(Raffle.Raffle__DrawingInProgress.selector);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
     }
 
     function test_EntryWindowIsOpenWhenIntervalHasNotPassed() public {
