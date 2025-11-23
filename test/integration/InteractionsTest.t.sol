@@ -16,7 +16,7 @@ contract InteractionsTest is Test {
     MyVRFCoordinatorV2_5Mock myVRFCoordinatorV2_5Mock;
 
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
-    event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
+    event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
@@ -59,7 +59,7 @@ contract InteractionsTest is Test {
         performUpkeepScript.performUpkeep(address(raffle));
 
         vm.expectEmit(true, true, false, true, address(raffle));
-        emit RoundCompleted(1, player2, expectedPrizePool);
+        emit DrawCompleted(1, player2, expectedPrizePool);
 
         myVRFCoordinatorV2_5Mock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1

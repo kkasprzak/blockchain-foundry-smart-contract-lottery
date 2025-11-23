@@ -35,7 +35,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
     event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested(uint256 indexed roundNumber);
-    event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
+    event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     error Raffle__InvalidEntranceFee();
     error Raffle__EntryWindowIsClosed();
@@ -104,7 +104,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         if (s_players.length == 0) {
             uint256 roundNumber = s_roundNumber;
             _resetRaffleForNextRound();
-            emit RoundCompleted(roundNumber, NO_WINNER, NO_PRIZE);
+            emit DrawCompleted(roundNumber, NO_WINNER, NO_PRIZE);
             return;
         }
 
@@ -152,7 +152,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
         _resetRaffleForNextRound();
 
-        emit RoundCompleted(roundNumber, winner, prizeAmount);
+        emit DrawCompleted(roundNumber, winner, prizeAmount);
 
         (bool success,) = payable(winner).call{value: prizeAmount}("");
 

@@ -305,6 +305,76 @@ assertEq(_runRound(...), expectedWinner);  // Assertion in test
 - Each issue represents a specific feature, bug fix, or improvement
 - Work on one task at a time
 
+### Daily Session Startup Protocol
+
+**When to execute this protocol:**
+
+Execute this startup routine when:
+- User asks "what are we working on?" or "what's next?"
+- User asks "what should we do today?"
+- Beginning of a new session or day
+- User mentions starting work
+
+**Protocol (execute these steps in order):**
+
+1. **Check git status and current branch:**
+   ```bash
+   git status
+   ```
+   Identify: current branch, issue number from branch name, uncommitted changes
+
+2. **Check active GitHub issues:**
+   ```bash
+   # Check issues in progress
+   gh issue list --json number,title,state,projectItems --limit 20 | jq '.[] | select(.projectItems[]?.status.name == "In progress") | {number, title, status: .projectItems[0].status.name}'
+
+   # If no issues in progress, check all open issues
+   gh issue list --state open
+   ```
+   Look for: issues with "In progress" status first, then the issue matching current branch, or next issue to work on
+
+3. **Run tests to find failing tests (Kent Beck warm start):**
+   ```bash
+   forge test
+   ```
+   Look for:
+   - Tests marked with TODO
+   - Failing tests that serve as entry point for the session
+   - This is the "Kent Beck technique" - starting day with a failing test provides immediate direction
+
+**Present context to user:**
+
+After executing the protocol, present:
+- Current branch and related issue number
+- **Issue in progress** from GitHub project status
+- Status of uncommitted changes
+- **Failing test as starting point** (if exists) - emphasize this is a warm start
+- List of open issues if starting fresh
+
+**Example output:**
+
+```
+Current status:
+- Branch: feature/issue-20-remove-duplicate-entry-prevention
+- Issue in progress: #20 - Remove duplicate entry prevention to enable multiple entries per player
+- Uncommitted changes: test/unit/RaffleTest.t.sol
+
+Tests status:
+✓ 32 tests passing
+✗ 1 test failing: test_EntryWindowResetsAfterRoundCompletion()
+  [FAIL: TODO: Implement entry window reset verification]
+
+Perfect! We have a failing test as our starting point (Kent Beck style).
+This gives us immediate direction - let's implement the entry window reset verification.
+```
+
+**Why this protocol:**
+
+- **Immediate context**: No time wasted figuring out what to do
+- **Kent Beck's failing test technique**: Failing test = instant warm start
+- **Continuity**: Pick up exactly where previous session left off
+- **Focus**: Clear next step instead of decision paralysis
+
 ### Starting Work on a Task
 
 **IMPORTANT: Never work directly on the `main` branch**

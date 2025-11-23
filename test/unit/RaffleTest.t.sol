@@ -27,7 +27,7 @@ contract RaffleTest is Test {
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
     event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested(uint256 indexed roundNumber);
-    event RoundCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
+    event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     function setUp() public {
         s_vrfCoordinatorMock = new MyVRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
@@ -225,25 +225,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
     }
 
-    function test_EntryWindowIsOpenWhenIntervalHasNotPassed() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-
-        _assertEntryWindowIsOpen(raffle);
-    }
-
-    function test_EntryWindowIsClosedWhenIntervalHasPassed() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-
-        _waitForDrawTime(interval + 1);
-
-        _assertEntryWindowIsClosed(raffle);
-    }
-
-    function test_DrawCannotStartWhenEntryWindowIsOpen() public {
+    function test_DrawCannotStartBeforeTimeIntervalElapses() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -252,7 +234,7 @@ contract RaffleTest is Test {
         _startDraw(raffle);
     }
 
-    function test_DrawCannotStartWhenDrawIsInProgress() public {
+    function test_CannotStartAnotherDrawWhilePreviousDrawIsInProgress() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -268,7 +250,7 @@ contract RaffleTest is Test {
         _startDraw(raffle);
     }
 
-    function test_RoundCompletesWithNoWinnerWhenNoPlayersEntered() public {
+    function test_DrawCompletesWithNoWinnerWhenNoPlayersEntered() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -276,34 +258,12 @@ contract RaffleTest is Test {
         _waitForDrawTime(interval + 1);
 
         vm.expectEmit(true, true, true, false, address(raffle));
-        emit RoundCompleted(FIRST_ROUND, NO_WINNER, NO_PRIZE);
+        emit DrawCompleted(FIRST_ROUND, NO_WINNER, NO_PRIZE);
 
         _startDraw(raffle);
     }
 
-    function test_DrawStartsWhenEntryWindowClosesWithPlayers() public {
-        uint256 entranceFee = 0.01 ether;
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
-        address player1 = makeAddr("player1");
-        address player2 = makeAddr("player2");
-        address player3 = makeAddr("player3");
-
-        _fundPlayerForRaffle(player1, 1 ether);
-        _fundPlayerForRaffle(player2, 1 ether);
-        _fundPlayerForRaffle(player3, 1 ether);
-        _enterRaffleAsPlayer(raffle, player1, entranceFee);
-        _enterRaffleAsPlayer(raffle, player2, entranceFee);
-        _enterRaffleAsPlayer(raffle, player3, entranceFee);
-        _waitForDrawTime(interval + 1);
-
-        vm.expectEmit(true, false, false, false, address(raffle));
-        emit DrawRequested(FIRST_ROUND);
-
-        _startDraw(raffle);
-    }
-
-    function test_PickWinnerEmitsDrawRequestedEvent() public {
+    function test_EventEmittedWhenDrawStarts() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -472,7 +432,7 @@ contract RaffleTest is Test {
         assertEq(address(raffle).balance, 0);
     }
 
-    function test_RoundCompletedEventEmittedAfterWinnerSelection() public {
+    function test_DrawCompletedEventEmittedAfterWinnerSelection() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -490,27 +450,11 @@ contract RaffleTest is Test {
         uint256 expectedPrize = entranceFee;
 
         vm.expectEmit(true, true, false, true, address(raffle));
-        emit RoundCompleted(expectedRoundNumber, player, expectedPrize);
+        emit DrawCompleted(expectedRoundNumber, player, expectedPrize);
 
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
         );
-    }
-
-    function test_RoundCompletedEventEmittedWhenNoParticipants() public {
-        uint256 interval = 30;
-        Raffle raffle = _createRaffleWithInterval(interval);
-
-        _waitForDrawTime(interval + 1);
-
-        uint256 expectedRoundNumber = 1;
-        address expectedWinner = address(0);
-        uint256 expectedPrize = 0;
-
-        vm.expectEmit(true, true, false, true, address(raffle));
-        emit RoundCompleted(expectedRoundNumber, expectedWinner, expectedPrize);
-
-        _startDraw(raffle);
     }
 
     function test_RoundNumberIncrementsAcrossMultipleRounds() public {
@@ -528,7 +472,7 @@ contract RaffleTest is Test {
         _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
-        emit RoundCompleted(1, player, entranceFee);
+        emit DrawCompleted(1, player, entranceFee);
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
         );
@@ -540,7 +484,7 @@ contract RaffleTest is Test {
         _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
-        emit RoundCompleted(2, player, entranceFee);
+        emit DrawCompleted(2, player, entranceFee);
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
         );
@@ -552,10 +496,28 @@ contract RaffleTest is Test {
         _startDraw(raffle);
 
         vm.expectEmit(true, true, false, true, address(raffle));
-        emit RoundCompleted(3, player, entranceFee);
+        emit DrawCompleted(3, player, entranceFee);
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
         );
+    }
+
+    function test_EntryWindowIsOpenWhenIntervalHasNotPassed() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        _assertEntryWindowIsOpen(raffle);
+    }
+
+    function test_EntryWindowIsClosedWhenIntervalHasPassed() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+
+        _waitForDrawTime(interval + 1);
+
+        _assertEntryWindowIsClosed(raffle);
     }
 
     function _createValidRaffle() private returns (Raffle) {
