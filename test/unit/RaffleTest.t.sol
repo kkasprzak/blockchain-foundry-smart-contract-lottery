@@ -383,7 +383,7 @@ contract RaffleTest is Test {
         );
     }
 
-    function test_NewRoundStartsEvenWhenPrizeTransferFails() public {
+    function test_NewRoundStartsEvenWhenPrizeDeliveryFails() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -399,7 +399,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
     }
 
-    function test_NewRoundStartsWithoutPreviousParticipants() public {
+    function test_NewRoundStartsWithoutPreviousPlayers() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -416,7 +416,7 @@ contract RaffleTest is Test {
         assertEq(_runRound(raffle, interval, FIRST_ENTRY_WINS), player2);
     }
 
-    function test_NewRoundStartsWithZeroBalance() public {
+    function test_NewRoundStartsWithEmptyPrizePool() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
