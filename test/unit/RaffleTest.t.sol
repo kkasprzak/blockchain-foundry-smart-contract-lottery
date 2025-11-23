@@ -457,7 +457,7 @@ contract RaffleTest is Test {
         assertEq(address(raffle).balance, 0);
     }
 
-    function test_RoundNumberIncrementsAcrossMultipleRounds() public {
+    function test_EachRaffleRoundHasUniqueSequentialNumber() public {
         // Setup
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
