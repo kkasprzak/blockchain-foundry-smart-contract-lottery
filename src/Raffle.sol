@@ -90,7 +90,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         emit RaffleEntered(s_roundNumber, msg.sender);
     }
 
-    // slither-disable-next-line reentrancy-events
+    // slither-disable-next-line reentrancy-events,timestamp
     function performUpkeep(
         bytes calldata /* performData */
     )
@@ -117,6 +117,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         return i_entranceFee;
     }
 
+    // slither-disable-next-line timestamp
     function checkUpkeep(
         bytes memory /* checkData */
     )
