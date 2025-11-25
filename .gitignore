@@ -11,3 +11,6 @@ docs/
 
 # Dotenv file
 .env
+
+# AI plans (work in progress)
+.ai/plans/

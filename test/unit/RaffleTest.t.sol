@@ -28,6 +28,7 @@ contract RaffleTest is Test {
     event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested(uint256 indexed roundNumber);
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
+    event PrizeWithdrawn(address indexed winner, uint256 amount);
 
     function setUp() public {
         s_vrfCoordinatorMock = new MyVRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 5300000000000000);
@@ -500,6 +501,30 @@ contract RaffleTest is Test {
         s_vrfCoordinatorMock.simulateVRFCoordinatorCallback(
             vm.getRecordedLogs().getVrfRequestId(), address(raffle), FIRST_ENTRY_WINS
         );
+    }
+
+    function test_WinnerCanWithdrawPrize() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+
+        uint256 balanceBeforeWithdrawal = player1.balance;
+        uint256 expectedPrize = entranceFee * 2;
+
+        _runRound(raffle, interval, FIRST_ENTRY_WINS);
+
+        vm.prank(player1);
+        raffle.withdrawPrize();
+
+        assertEq(player1.balance, balanceBeforeWithdrawal + expectedPrize);
     }
 
     // Chainlink Automation integration tests
