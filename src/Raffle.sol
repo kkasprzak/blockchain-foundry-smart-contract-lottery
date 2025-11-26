@@ -31,11 +31,14 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     uint256 private s_requestId;
     RaffleState private s_raffleState;
     uint256 private s_roundNumber;
+    mapping(address => uint256) private s_unclaimedPrizes;
+    uint256 private s_prizePool;
 
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
     event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested(uint256 indexed roundNumber);
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
+    event PrizeClaimed(address indexed winner, uint256 amount);
 
     error Raffle__InvalidEntranceFee();
     error Raffle__EntryWindowIsClosed();
@@ -44,6 +47,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     error Raffle__RaffleIsNotDrawing();
     error Raffle__InvalidRequestId();
     error Raffle__DrawingNotAllowed();
+    error Raffle__NoUnclaimedPrize();
 
     constructor(
         uint256 entranceFee,
@@ -86,6 +90,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         }
 
         _addPlayerToRaffle(msg.sender);
+        s_prizePool += msg.value;
 
         emit RaffleEntered(s_roundNumber, msg.sender);
     }
@@ -148,18 +153,20 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         }
 
         address winner = s_players[randomWords[0] % s_players.length];
-        uint256 prizeAmount = address(this).balance;
+        uint256 prizeAmount = s_prizePool;
         uint256 roundNumber = s_roundNumber;
 
         _resetRaffleForNextRound();
 
         emit DrawCompleted(roundNumber, winner, prizeAmount);
 
-        (bool success,) = payable(winner).call{value: prizeAmount}("");
+        // (bool success,) = payable(winner).call{value: prizeAmount}("");
 
-        if (!success) {
-            emit PrizeTransferFailed(roundNumber, winner, prizeAmount);
-        }
+        // if (!success) {
+        //     emit PrizeTransferFailed(roundNumber, winner, prizeAmount);
+        // }
+
+        s_unclaimedPrizes[winner] += prizeAmount;
     }
 
     function _resetRaffleForNextRound() private {
@@ -167,6 +174,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         s_lastTimeStamp = block.timestamp;
         s_raffleState = RaffleState.OPEN;
         s_roundNumber++;
+        s_prizePool = 0;
     }
 
     function _addPlayerToRaffle(address player) private {
@@ -197,5 +205,19 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function _isRaffleInState(RaffleState state) private view returns (bool) {
         return s_raffleState == state;
+    }
+
+    function claimPrize() external {
+        uint256 amount = s_unclaimedPrizes[msg.sender];
+        if (amount == 0) {
+            revert Raffle__NoUnclaimedPrize();
+        }
+        s_unclaimedPrizes[msg.sender] = 0;
+        (bool success,) = payable(msg.sender).call{value: amount}("");
+        if (!success) {
+            s_unclaimedPrizes[msg.sender] = amount;
+            revert("Prize transfer failed");
+        }
+        emit PrizeClaimed(msg.sender, amount);
     }
 }
