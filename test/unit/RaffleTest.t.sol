@@ -25,7 +25,6 @@ contract RaffleTest is Test {
     uint256 private s_subscriptionId;
 
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
-    event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested(uint256 indexed roundNumber);
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
     event PrizeClaimed(address indexed winner, uint256 amount);
