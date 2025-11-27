@@ -39,6 +39,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     event DrawRequested(uint256 indexed roundNumber);
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
     event PrizeClaimed(address indexed winner, uint256 amount);
+    event PrizeClaimFailed(address indexed winner, uint256 amount);
 
     error Raffle__InvalidEntranceFee();
     error Raffle__EntryWindowIsClosed();
@@ -120,6 +121,23 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
+    }
+
+    function claimPrize() external nonReentrant {
+        uint256 amount = s_unclaimedPrizes[msg.sender];
+        if (amount == 0) {
+            revert Raffle__NoUnclaimedPrize();
+        }
+        s_unclaimedPrizes[msg.sender] = 0;
+
+        (bool success,) = payable(msg.sender).call{value: amount}("");
+        if (!success) {
+            s_unclaimedPrizes[msg.sender] = amount;
+            emit PrizeClaimFailed(msg.sender, amount);
+            return;
+        }
+
+        emit PrizeClaimed(msg.sender, amount);
     }
 
     // slither-disable-next-line timestamp
@@ -205,19 +223,5 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function _isRaffleInState(RaffleState state) private view returns (bool) {
         return s_raffleState == state;
-    }
-
-    function claimPrize() external {
-        uint256 amount = s_unclaimedPrizes[msg.sender];
-        if (amount == 0) {
-            revert Raffle__NoUnclaimedPrize();
-        }
-        s_unclaimedPrizes[msg.sender] = 0;
-        (bool success,) = payable(msg.sender).call{value: amount}("");
-        if (!success) {
-            s_unclaimedPrizes[msg.sender] = amount;
-            revert("Prize transfer failed");
-        }
-        emit PrizeClaimed(msg.sender, amount);
     }
 }
