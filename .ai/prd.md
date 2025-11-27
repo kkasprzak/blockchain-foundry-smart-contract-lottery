@@ -195,7 +195,6 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given I withdraw my prize, when the withdrawal succeeds, then a PrizeWithdrawn event is emitted with my address and amount
   - Given the transfer fails during withdrawal, when I retry, then I can attempt withdrawal again without losing my prize
   - Given multiple winners across rounds, when they withdraw, then each receives only their designated prize amount
-  - Given a winner has not withdrawn, when I query the contract, then I can check my pending withdrawal amount
 
 ## 7. Success metrics
 
