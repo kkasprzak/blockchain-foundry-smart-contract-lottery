@@ -118,6 +118,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         emit DrawRequested(s_roundNumber);
     }
 
+    // slither-disable-next-line reentrancy-eth
     function claimPrize() external nonReentrant {
         uint256 amount = s_unclaimedPrizes[msg.sender];
         if (amount == 0) {
