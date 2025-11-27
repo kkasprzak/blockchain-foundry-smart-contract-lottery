@@ -31,11 +31,10 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     uint256 private s_requestId;
     RaffleState private s_raffleState;
     uint256 private s_roundNumber;
-    mapping(address => uint256) private s_unclaimedPrizes;
     uint256 private s_prizePool;
+    mapping(address => uint256) private s_unclaimedPrizes;
 
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
-    event PrizeTransferFailed(uint256 indexed roundNumber, address indexed winnerAddress, uint256 prizeAmount);
     event DrawRequested(uint256 indexed roundNumber);
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
     event PrizeClaimed(address indexed winner, uint256 amount);
@@ -119,10 +118,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         emit DrawRequested(s_roundNumber);
     }
 
-    function getEntranceFee() external view returns (uint256) {
-        return i_entranceFee;
-    }
-
     function claimPrize() external nonReentrant {
         uint256 amount = s_unclaimedPrizes[msg.sender];
         if (amount == 0) {
@@ -138,6 +133,10 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         }
 
         emit PrizeClaimed(msg.sender, amount);
+    }
+
+    function getEntranceFee() external view returns (uint256) {
+        return i_entranceFee;
     }
 
     // slither-disable-next-line timestamp
@@ -174,17 +173,10 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         uint256 prizeAmount = s_prizePool;
         uint256 roundNumber = s_roundNumber;
 
+        s_unclaimedPrizes[winner] += prizeAmount;
         _resetRaffleForNextRound();
 
         emit DrawCompleted(roundNumber, winner, prizeAmount);
-
-        // (bool success,) = payable(winner).call{value: prizeAmount}("");
-
-        // if (!success) {
-        //     emit PrizeTransferFailed(roundNumber, winner, prizeAmount);
-        // }
-
-        s_unclaimedPrizes[winner] += prizeAmount;
     }
 
     function _resetRaffleForNextRound() private {
