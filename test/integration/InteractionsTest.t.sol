@@ -66,10 +66,13 @@ contract InteractionsTest is Test {
         );
 
         address winner = vm.getRecordedLogs().getWinner();
-        uint256 actualPrizeTransferred = address(winner).balance - (1 ether - entranceFee);
+        uint256 balanceBeforeClaim = winner.balance;
+
+        vm.prank(winner);
+        raffle.claimPrize();
 
         assertTrue(winner == player2);
-        assertEq(actualPrizeTransferred, expectedPrizePool);
+        assertEq(winner.balance, balanceBeforeClaim + expectedPrizePool);
         assertEq(address(raffle).balance, 0);
     }
 }

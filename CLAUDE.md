@@ -342,6 +342,16 @@ Execute this startup routine when:
    - Failing tests that serve as entry point for the session
    - This is the "Kent Beck technique" - starting day with a failing test provides immediate direction
 
+4. **Check for existing plan:**
+   ```bash
+   ls .ai/plans/
+   ```
+   Look for: plan file matching current issue number (e.g., `issue_9.md` for issue #9)
+   - If plan exists: read it to understand the implementation approach and current progress
+   - Plans provide continuity between sessions and remind you of design decisions
+   - Plan naming convention: `issue_<number>.md`
+   - Present plan summary if found
+
 **Present context to user:**
 
 After executing the protocol, present:
@@ -349,6 +359,7 @@ After executing the protocol, present:
 - **Issue in progress** from GitHub project status
 - Status of uncommitted changes
 - **Failing test as starting point** (if exists) - emphasize this is a warm start
+- **Existing plan** (if found) - summarize key implementation steps and current progress
 - List of open issues if starting fresh
 
 **Example output:**
@@ -364,6 +375,12 @@ Tests status:
 ✗ 1 test failing: test_EntryWindowResetsAfterRoundCompletion()
   [FAIL: TODO: Implement entry window reset verification]
 
+Existing plan found: .ai/plans/issue_20.md
+- Phase 1: Remove duplicate prevention logic ✓
+- Phase 2: Update tests for multiple entries ✓
+- Phase 3: Implement entry window reset (IN PROGRESS)
+- Phase 4: Integration tests
+
 Perfect! We have a failing test as our starting point (Kent Beck style).
 This gives us immediate direction - let's implement the entry window reset verification.
 ```
@@ -373,6 +390,7 @@ This gives us immediate direction - let's implement the entry window reset verif
 - **Immediate context**: No time wasted figuring out what to do
 - **Kent Beck's failing test technique**: Failing test = instant warm start
 - **Continuity**: Pick up exactly where previous session left off
+- **Persistent plans**: Design decisions and progress preserved across sessions
 - **Focus**: Clear next step instead of decision paralysis
 
 ### Starting Work on a Task
