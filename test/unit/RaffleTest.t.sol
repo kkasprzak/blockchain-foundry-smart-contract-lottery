@@ -367,7 +367,6 @@ contract RaffleTest is Test {
     }
 
     function test_NewRoundStartsWithEmptyPrizePool() public {
-        vm.skip(true);
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -380,7 +379,15 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player1, entranceFee);
         _runRound(raffle, interval, FIRST_ENTRY_WINS);
 
-        assertEq(address(raffle).balance, 0);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+        uint256 balanceAfterEntry = player2.balance;
+
+        _runRound(raffle, interval, FIRST_ENTRY_WINS);
+
+        vm.prank(player2);
+        raffle.claimPrize();
+
+        assertEq(player2.balance, balanceAfterEntry + entranceFee);
     }
 
     function test_EachRaffleRoundHasUniqueSequentialNumber() public {

@@ -25,7 +25,6 @@ contract InteractionsTest is Test {
     }
 
     function test_MultiPlayerScenario() public {
-        vm.skip(true);
         address player1 = makeAddr("player1");
         address player2 = makeAddr("player2");
         address player3 = makeAddr("player3");
@@ -67,10 +66,13 @@ contract InteractionsTest is Test {
         );
 
         address winner = vm.getRecordedLogs().getWinner();
-        uint256 actualPrizeTransferred = address(winner).balance - (1 ether - entranceFee);
+        uint256 balanceBeforeClaim = winner.balance;
+
+        vm.prank(winner);
+        raffle.claimPrize();
 
         assertTrue(winner == player2);
-        assertEq(actualPrizeTransferred, expectedPrizePool);
+        assertEq(winner.balance, balanceBeforeClaim + expectedPrizePool);
         assertEq(address(raffle).balance, 0);
     }
 }
