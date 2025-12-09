@@ -461,17 +461,24 @@ This gives us immediate direction - let's implement the entry window reset verif
 
 ### Creating Pull Request
 
-1. **Push feature branch:**
+1. **Pre-push verification (REQUIRED):**
+   ```bash
+   forge test      # All tests must pass
+   forge fmt       # Fix any formatting issues
+   ```
+   Never push without running these checks - CI will fail otherwise.
+
+2. **Push feature branch:**
    ```bash
    git push -u origin feature/<branch-name>
    ```
 
-2. **Create PR with GitHub CLI:**
+3. **Create PR with GitHub CLI:**
    ```bash
    gh pr create --title "feat: Title description (#issue-number)" --body "..."
    ```
 
-3. **Link to GitHub Issue:**
+4. **Link to GitHub Issue:**
    - Include `Closes #<issue-number>` in PR description
    - This automatically closes the issue when PR is merged
 

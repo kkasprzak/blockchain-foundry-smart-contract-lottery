@@ -41,16 +41,41 @@ contract AnvilNetworkConfig is NetworkConfig {
     }
 }
 
-contract HelperConfig is Script {
-    NetworkConfig public activeNetworkConfig;
+contract SepoliaNetworkConfig is NetworkConfig {
+    address private constant VRF_COORDINATOR = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
+    bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
+    uint32 private constant CALLBACK_GAS_LIMIT = 500000;
 
-    constructor() {
-        // For now, always use Anvil config
-        // We'll add Sepolia detection in the next step
-        activeNetworkConfig = new AnvilNetworkConfig();
+    uint256 private immutable i_subscriptionId;
+
+    error SepoliaNetworkConfig__SubscriptionIdRequired();
+
+    constructor(uint256 subscriptionId) {
+        if (subscriptionId == 0) {
+            revert SepoliaNetworkConfig__SubscriptionIdRequired();
+        }
+        i_subscriptionId = subscriptionId;
     }
 
-    function networkConfig() public view returns (NetworkConfig) {
-        return activeNetworkConfig;
+    function deployRaffle(uint256 entranceFee, uint256 interval) external override returns (Raffle) {
+        vm.startBroadcast();
+
+        Raffle raffle =
+            new Raffle(entranceFee, interval, VRF_COORDINATOR, KEY_HASH, i_subscriptionId, CALLBACK_GAS_LIMIT);
+
+        vm.stopBroadcast();
+
+        return raffle;
+    }
+}
+
+contract HelperConfig is Script {
+    uint256 private constant SEPOLIA_CHAIN_ID = 11155111;
+
+    function networkConfigForChain(uint256 chainId, uint256 subscriptionId) public returns (NetworkConfig) {
+        if (chainId == SEPOLIA_CHAIN_ID) {
+            return new SepoliaNetworkConfig(subscriptionId);
+        }
+        return new AnvilNetworkConfig();
     }
 }

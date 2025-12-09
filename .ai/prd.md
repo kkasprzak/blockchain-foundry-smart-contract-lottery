@@ -196,6 +196,25 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the transfer fails during withdrawal, when I retry, then I can attempt withdrawal again without losing my prize
   - Given multiple winners across rounds, when they withdraw, then each receives only their designated prize amount
 
+- **US-011: Deploy to Public Test Network**
+
+  As a lottery operator,
+  I want to deploy the Raffle contract to a public test network,
+  So that I can validate the complete system with real network conditions before considering production deployment.
+
+  **Acceptance Criteria:**
+
+  - Given I have test environment configured, when I deploy the contract, then it is successfully published to Sepolia testnet
+  - Given the contract is deployed, when anyone visits the block explorer, then they can view and verify the contract source code
+  - Given I set up the randomness service, when I fund it with test tokens, then the service has sufficient balance for multiple lottery rounds
+  - Given the contract is deployed, when I register it with the randomness service, then it can request random numbers for winner selection
+  - Given I configure automated operations, when I fund the automation service, then draws are triggered automatically without manual intervention
+  - Given the deployment completes, when the system detects it's on the test network, then it uses the correct service addresses for that network
+  - Given multiple test networks exist, when I deploy to Sepolia, then the system automatically selects the appropriate configuration
+  - Given the contract is live on the test network, when time passes and conditions are met, then the system executes draws automatically
+  - Given a draw completes on the test network, when randomness is provided, then a winner is selected and the result is publicly visible
+  - Given the system is operational, when I check service status dashboards, then I can monitor funding levels and request history
+
 ## 7. Success metrics
 
 - Autonomous operation: The contract performs draws automatically on Sepolia at the configured interval without manual intervention.
