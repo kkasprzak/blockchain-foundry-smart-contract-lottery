@@ -17,8 +17,10 @@ contract DeployRaffle is Script {
     }
 
     function deployRaffle(uint256 entranceFee, uint256 interval) public returns (Raffle) {
+        uint256 subscriptionId = vm.envOr("VRF_SUBSCRIPTION_ID", uint256(0));
+
         HelperConfig helperConfig = new HelperConfig();
-        NetworkConfig networkConfig = helperConfig.networkConfig();
+        NetworkConfig networkConfig = helperConfig.networkConfigForChain(block.chainid, subscriptionId);
 
         Raffle raffle = networkConfig.deployRaffle(entranceFee, interval);
 
