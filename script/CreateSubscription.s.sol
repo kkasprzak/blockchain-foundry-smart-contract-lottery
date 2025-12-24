@@ -5,16 +5,17 @@ import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig, ChainlinkConfig} from "./HelperConfig.s.sol";
 
 contract CreateSubscription is Script {
-    function run() external returns (uint256 subscriptionId) {
+    function run() external {
         HelperConfig helperConfig = new HelperConfig();
         ChainlinkConfig chainlinkConfig = helperConfig.chainlinkConfigForChain(block.chainid);
 
-        subscriptionId = chainlinkConfig.createSubscription();
+        chainlinkConfig.createSubscription();
 
-        console.log("Created subscription with ID:", subscriptionId);
-        console.log("Add this to your .env file:");
-        console.log("VRF_SUBSCRIPTION_ID=%s", subscriptionId);
-
-        return subscriptionId;
+        console.log("Subscription created successfully!");
+        console.log("To get your subscription ID:");
+        console.log("  1. Go to https://vrf.chain.link/sepolia");
+        console.log("  2. Connect your wallet");
+        console.log("  3. Copy the subscription ID");
+        console.log("  4. Add to .env: VRF_SUBSCRIPTION_ID=<your_id>");
     }
 }
