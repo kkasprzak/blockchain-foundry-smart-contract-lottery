@@ -7,6 +7,8 @@ A decentralized, transparent lottery system built on Ethereum that eliminates ce
 - [Project Description](#project-description)
 - [Tech Stack](#tech-stack)
 - [Getting Started Locally](#getting-started-locally)
+- [Deployment Environments](#deployment-environments)
+- [VRF Subscription Management](#vrf-subscription-management)
 - [Available Scripts](#available-scripts)
 - [Project Scope](#project-scope)
 - [Project Status](#project-status)
@@ -60,8 +62,8 @@ Players pay a configurable entry fee to join lottery rounds. When the predetermi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/foundry-smart-contract-lottery-f23
-cd foundry-smart-contract-lottery-f23
+git clone https://github.com/kkasprzak/blockchain-foundry-smart-contract-lottery
+cd blockchain-foundry-smart-contract-lottery
 ```
 
 2. Install dependencies:
@@ -247,6 +249,48 @@ This will:
 - Etherscan verification and monitoring
 - Persistent state (doesn't reset)
 - Public testnet accessibility
+
+### VRF Subscription Management
+
+Before deploying the Raffle contract on Sepolia, you need to set up a Chainlink VRF subscription. Use the following scripts to manage subscriptions programmatically:
+
+#### 1. Create Subscription
+```bash
+forge script script/CreateSubscription.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+```
+This creates a new VRF subscription and outputs the subscription ID. Add it to your `.env` file:
+```
+VRF_SUBSCRIPTION_ID=your_subscription_id
+```
+
+#### 2. Fund Subscription
+```bash
+forge script script/FundSubscription.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+```
+Funds your subscription with 0.1 LINK (default). Ensure you have LINK tokens in your wallet.
+
+> Get testnet LINK from [Chainlink Faucet](https://faucets.chain.link/sepolia)
+
+#### 3. Deploy Raffle Contract
+```bash
+make deploy-sepolia
+```
+After deployment, add the contract address to `.env`:
+```
+RAFFLE_CONTRACT_ADDRESS=your_contract_address
+```
+
+#### 4. Add Consumer
+```bash
+forge script script/AddConsumer.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+```
+Registers the Raffle contract as a VRF consumer on your subscription.
+
+#### 5. Check Subscription Status
+```bash
+./script/get-subscription-details.sh
+```
+Displays subscription details: balance, owner, registered consumers, and request count.
 
 ---
 
