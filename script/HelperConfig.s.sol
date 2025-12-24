@@ -62,7 +62,7 @@ contract AnvilChainlinkConfig is ChainlinkConfig {
 contract SepoliaNetworkConfig is NetworkConfig {
     address private constant VRF_COORDINATOR = 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B;
     bytes32 private constant KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
-    uint32 private constant CALLBACK_GAS_LIMIT = 500000;
+    uint32 private constant CALLBACK_GAS_LIMIT = 200000;
 
     uint256 private immutable i_subscriptionId;
 
