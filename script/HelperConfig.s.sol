@@ -15,11 +15,6 @@ abstract contract ChainlinkConfig is Script {
     function createSubscription() external virtual returns (uint256);
     function fundSubscription(uint256 subscriptionId, uint256 amount) external virtual;
     function addConsumer(uint256 subscriptionId, address consumer) external virtual;
-    function getSubscription(uint256 subscriptionId)
-        external
-        view
-        virtual
-        returns (uint96 balance, uint96 nativeBalance, uint64 reqCount, address owner, address[] memory consumers);
 }
 
 contract AnvilNetworkConfig is NetworkConfig {
@@ -62,15 +57,6 @@ contract AnvilChainlinkConfig is ChainlinkConfig {
     function fundSubscription(uint256, uint256) external override {}
 
     function addConsumer(uint256, address) external override {}
-
-    function getSubscription(uint256)
-        external
-        pure
-        override
-        returns (uint96, uint96, uint64, address, address[] memory)
-    {
-        return (0, 0, 0, address(0), new address[](0));
-    }
 }
 
 contract SepoliaNetworkConfig is NetworkConfig {
@@ -129,15 +115,6 @@ contract SepoliaChainlinkConfig is ChainlinkConfig {
         IVRFSubscriptionV2Plus(VRF_COORDINATOR).addConsumer(subscriptionId, consumer);
 
         vm.stopBroadcast();
-    }
-
-    function getSubscription(uint256 subscriptionId)
-        external
-        view
-        override
-        returns (uint96 balance, uint96 nativeBalance, uint64 reqCount, address owner, address[] memory consumers)
-    {
-        return IVRFSubscriptionV2Plus(VRF_COORDINATOR).getSubscription(subscriptionId);
     }
 }
 

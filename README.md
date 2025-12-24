@@ -62,8 +62,8 @@ Players pay a configurable entry fee to join lottery rounds. When the predetermi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-username/foundry-smart-contract-lottery-f23
-cd foundry-smart-contract-lottery-f23
+git clone https://github.com/kkasprzak/blockchain-foundry-smart-contract-lottery
+cd blockchain-foundry-smart-contract-lottery
 ```
 
 2. Install dependencies:
@@ -288,7 +288,7 @@ Registers the Raffle contract as a VRF consumer on your subscription.
 
 #### 5. Check Subscription Status
 ```bash
-forge script script/GetSubscriptionDetails.s.sol --rpc-url sepolia --account sepoliaKey
+./script/get-subscription-details.sh
 ```
 Displays subscription details: balance, owner, registered consumers, and request count.
 
