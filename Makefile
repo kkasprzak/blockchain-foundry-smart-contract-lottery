@@ -1,4 +1,5 @@
 .PHONY: help install build test clean deploy-sepolia deploy-local slither
+.PHONY: register-upkeep fund-upkeep upkeep-status
 
 # Default target - show help when no target specified
 help:
@@ -20,10 +21,16 @@ help:
 	@echo "  deploy-local     Deploy to local network (anvil)"
 	@echo "  deploy-sepolia   Deploy to Sepolia testnet"
 	@echo ""
+	@echo "Chainlink Automation Commands:"
+	@echo "  register-upkeep  Register new upkeep for Raffle contract"
+	@echo "  fund-upkeep      Fund existing upkeep with LINK"
+	@echo "  upkeep-status    Check upkeep balance and status"
+	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make test                         # Quick testing during development"
 	@echo "  make slither                      # Run security analysis"
 	@echo "  make deploy-local                 # Test deployment locally"
+	@echo "  make register-upkeep              # Register Chainlink Automation upkeep"
 
 # Install forge dependencies
 install:
@@ -56,3 +63,21 @@ deploy-local:
 slither:
 	@echo "Running Slither static analysis..."
 	@slither . --foundry-compile-all --filter-paths "lib/,test/" --exclude-informational --exclude-optimization
+
+# Register new Chainlink Automation upkeep
+register-upkeep:
+	@echo "Registering Chainlink Automation upkeep..."
+	@echo "This will transfer 2 LINK (default) from your wallet to fund the upkeep."
+	@echo "Configure UPKEEP_FUND_AMOUNT in .env to change the amount."
+	@forge script script/RegisterUpkeep.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+
+# Fund existing upkeep with LINK
+fund-upkeep:
+	@echo "Funding Chainlink Automation upkeep..."
+	@echo "This will transfer 2 LINK (default) from your wallet to the upkeep."
+	@echo "Configure UPKEEP_FUND_AMOUNT in .env to change the amount."
+	@forge script script/FundUpkeep.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+
+# Check upkeep status
+upkeep-status:
+	@./script/get-upkeep-details.sh
