@@ -5,6 +5,13 @@
 
 set -e
 
+# Load .env file if it exists
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+fi
+
 UPKEEP_ID=${1:-$AUTOMATION_UPKEEP_ID}
 
 if [ -z "$UPKEEP_ID" ]; then
@@ -22,34 +29,28 @@ echo "=== Upkeep Details ==="
 echo "Upkeep ID: $UPKEEP_ID"
 echo ""
 
-# getUpkeep returns UpkeepInfo struct
-RESULT=$(cast call $REGISTRY "getUpkeep(uint256)(address,uint32,bytes,uint96,address,uint64,uint32,uint96,bool,bytes)" $UPKEEP_ID --rpc-url $RPC_URL 2>/dev/null)
+# Get balance using getBalance (simpler call, returns uint96)
+BALANCE_RAW=$(cast call $REGISTRY "getBalance(uint256)(uint96)" $UPKEEP_ID --rpc-url "$RPC_URL" 2>/dev/null) || BALANCE_RAW=""
 
-if [ $? -ne 0 ]; then
-    echo "Error: Could not fetch upkeep details. Is the upkeep ID correct?"
-    exit 1
+if [ -n "$BALANCE_RAW" ]; then
+    # Extract just the numeric value (first word before space or bracket)
+    BALANCE=$(echo "$BALANCE_RAW" | awk '{print $1}')
+    # Convert balance from wei to LINK (18 decimals)
+    BALANCE_LINK=$(echo "scale=4; $BALANCE / 1000000000000000000" | bc 2>/dev/null || echo "$BALANCE wei")
+    echo "LINK Balance: $BALANCE_LINK LINK"
+else
+    echo "Could not fetch balance (check RPC connection)"
 fi
 
-# Parse the result (cast returns values on separate lines)
-TARGET=$(echo "$RESULT" | sed -n '1p')
-EXECUTE_GAS=$(echo "$RESULT" | sed -n '2p')
-BALANCE=$(echo "$RESULT" | sed -n '4p')
-ADMIN=$(echo "$RESULT" | sed -n '5p')
-LAST_PERFORMED=$(echo "$RESULT" | sed -n '7p')
-AMOUNT_SPENT=$(echo "$RESULT" | sed -n '8p')
-PAUSED=$(echo "$RESULT" | sed -n '9p')
+# Get minimum balance required
+MIN_BALANCE_RAW=$(cast call $REGISTRY "getMinBalance(uint256)(uint96)" $UPKEEP_ID --rpc-url "$RPC_URL" 2>/dev/null) || MIN_BALANCE_RAW=""
 
-# Convert balance from wei to LINK (18 decimals)
-BALANCE_LINK=$(echo "scale=4; $BALANCE / 1000000000000000000" | bc 2>/dev/null || echo "$BALANCE wei")
-SPENT_LINK=$(echo "scale=4; $AMOUNT_SPENT / 1000000000000000000" | bc 2>/dev/null || echo "$AMOUNT_SPENT wei")
+if [ -n "$MIN_BALANCE_RAW" ]; then
+    MIN_BALANCE=$(echo "$MIN_BALANCE_RAW" | awk '{print $1}')
+    MIN_BALANCE_LINK=$(echo "scale=4; $MIN_BALANCE / 1000000000000000000" | bc 2>/dev/null || echo "$MIN_BALANCE wei")
+    echo "Min Balance Required: $MIN_BALANCE_LINK LINK"
+fi
 
-echo "Target Contract: $TARGET"
-echo "Admin: $ADMIN"
-echo "Gas Limit: $EXECUTE_GAS"
-echo "LINK Balance: $BALANCE_LINK LINK"
-echo "Amount Spent: $SPENT_LINK LINK"
-echo "Last Performed Block: $LAST_PERFORMED"
-echo "Paused: $PAUSED"
 echo ""
-echo "View on Chainlink Automation UI:"
+echo "View full details on Chainlink Automation UI:"
 echo "https://automation.chain.link/sepolia/$UPKEEP_ID"
