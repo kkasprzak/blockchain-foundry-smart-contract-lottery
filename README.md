@@ -286,11 +286,36 @@ forge script script/AddConsumer.s.sol --rpc-url sepolia --broadcast --account se
 ```
 Registers the Raffle contract as a VRF consumer on your subscription.
 
-#### 5. Check Subscription Status
+#### 5. Check VRF Subscription Status
 ```bash
 ./script/get-subscription-details.sh
 ```
 Displays subscription details: balance, owner, registered consumers, and request count.
+
+### Chainlink Automation Setup
+
+Automation triggers `performUpkeep` when `checkUpkeep` returns true (after the interval elapses with players).
+
+#### 6. Register Upkeep
+```bash
+forge script script/RegisterUpkeep.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+```
+Registers the Raffle contract for Chainlink Automation with 2 LINK initial funding. After registration, add the upkeep ID to your `.env`:
+```
+AUTOMATION_UPKEEP_ID=your_upkeep_id
+```
+
+#### 7. Fund Upkeep (Optional)
+```bash
+forge script script/FundUpkeep.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+```
+Adds 2 LINK to an existing upkeep. Configure amount via `UPKEEP_FUND_AMOUNT` in `.env`.
+
+#### 8. Check Upkeep Status
+```bash
+./script/get-upkeep-details.sh
+```
+Displays upkeep balance and minimum balance required.
 
 ---
 

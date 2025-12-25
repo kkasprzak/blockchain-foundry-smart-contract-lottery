@@ -1,20 +1,52 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Script, console} from "forge-std/Script.sol";
+import {Script} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
 import {MyVRFCoordinatorV2_5Mock} from "../test/mocks/MyVRFCoordinatorV2_5Mock.sol";
 import {IVRFSubscriptionV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFSubscriptionV2Plus.sol";
 import {IERC677} from "@chainlink/contracts/src/v0.8/shared/token/ERC677/IERC677.sol";
+import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
+import {
+    IKeeperRegistryMaster
+} from "@chainlink/contracts/src/v0.8/automation/interfaces/v2_1/IKeeperRegistryMaster.sol";
+
+struct RegistrationParams {
+    string name;
+    bytes encryptedEmail;
+    address upkeepContract;
+    uint32 gasLimit;
+    address adminAddress;
+    uint8 triggerType;
+    bytes checkData;
+    bytes triggerConfig;
+    bytes offchainConfig;
+    uint96 amount;
+}
+
+interface IAutomationRegistrar {
+    function registerUpkeep(RegistrationParams calldata requestParams) external returns (uint256);
+}
 
 abstract contract NetworkConfig is Script {
     function deployRaffle(uint256 entranceFee, uint256 interval) external virtual returns (Raffle);
 }
 
+// TODO: Extract to separate file
 abstract contract ChainlinkConfig is Script {
     function createSubscription() external virtual returns (uint256);
     function fundSubscription(uint256 subscriptionId, uint256 amount) external virtual;
     function addConsumer(uint256 subscriptionId, address consumer) external virtual;
+}
+
+// TODO: Extract to separate file
+abstract contract AutomationConfig is Script {
+    function registerUpkeep(string memory name, address upkeepContract, uint32 gasLimit, uint96 amount)
+        external
+        virtual
+        returns (uint256);
+
+    function fundUpkeep(uint256 upkeepId, uint96 amount) external virtual;
 }
 
 contract AnvilNetworkConfig is NetworkConfig {
@@ -57,6 +89,14 @@ contract AnvilChainlinkConfig is ChainlinkConfig {
     function fundSubscription(uint256, uint256) external override {}
 
     function addConsumer(uint256, address) external override {}
+}
+
+contract AnvilAutomationConfig is AutomationConfig {
+    function registerUpkeep(string memory, address, uint32, uint96) external pure override returns (uint256) {
+        return 0;
+    }
+
+    function fundUpkeep(uint256, uint96) external override {}
 }
 
 contract SepoliaNetworkConfig is NetworkConfig {
@@ -118,6 +158,50 @@ contract SepoliaChainlinkConfig is ChainlinkConfig {
     }
 }
 
+contract SepoliaAutomationConfig is AutomationConfig {
+    address private constant AUTOMATION_REGISTRAR = 0xb0E49c5D0d05cbc241d68c05BC5BA1d1B7B72976;
+    address private constant AUTOMATION_REGISTRY = 0x86EFBD0b6736Bed994962f9797049422A3A8E8Ad;
+    address private constant LINK_TOKEN = 0x779877A7B0D9E8603169DdbD7836e478b4624789;
+
+    function registerUpkeep(string memory name, address upkeepContract, uint32 gasLimit, uint96 amount)
+        external
+        override
+        returns (uint256)
+    {
+        vm.startBroadcast();
+
+        LinkTokenInterface(LINK_TOKEN).approve(AUTOMATION_REGISTRAR, amount);
+
+        RegistrationParams memory params = RegistrationParams({
+            name: name,
+            encryptedEmail: "",
+            upkeepContract: upkeepContract,
+            gasLimit: gasLimit,
+            adminAddress: msg.sender,
+            triggerType: 0,
+            checkData: "",
+            triggerConfig: "",
+            offchainConfig: "",
+            amount: amount
+        });
+
+        uint256 upkeepId = IAutomationRegistrar(AUTOMATION_REGISTRAR).registerUpkeep(params);
+
+        vm.stopBroadcast();
+
+        return upkeepId;
+    }
+
+    function fundUpkeep(uint256 upkeepId, uint96 amount) external override {
+        vm.startBroadcast();
+
+        LinkTokenInterface(LINK_TOKEN).approve(AUTOMATION_REGISTRY, amount);
+        IKeeperRegistryMaster(AUTOMATION_REGISTRY).addFunds(upkeepId, amount);
+
+        vm.stopBroadcast();
+    }
+}
+
 contract HelperConfig is Script {
     uint256 private constant SEPOLIA_CHAIN_ID = 11155111;
 
@@ -133,5 +217,12 @@ contract HelperConfig is Script {
             return new SepoliaChainlinkConfig();
         }
         return new AnvilChainlinkConfig();
+    }
+
+    function automationConfigForChain(uint256 chainId) public returns (AutomationConfig) {
+        if (chainId == SEPOLIA_CHAIN_ID) {
+            return new SepoliaAutomationConfig();
+        }
+        return new AnvilAutomationConfig();
     }
 }
