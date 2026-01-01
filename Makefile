@@ -76,7 +76,7 @@ slither:
 # Run linters (Solhint + Forge lint)
 lint:
 	@echo "Running Solhint linter..."
-	@solhint 'src/**/*.sol'
+	@solhint 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'
 	@echo "Running Forge linter..."
 	@forge lint
 

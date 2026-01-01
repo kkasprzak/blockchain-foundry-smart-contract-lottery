@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -24,7 +24,7 @@ contract InteractionsTest is Test {
         myVRFCoordinatorV2_5Mock = MyVRFCoordinatorV2_5Mock(address(raffle.s_vrfCoordinator()));
     }
 
-    function test_MultiPlayerScenario() public {
+    function testMultiPlayerScenario() public {
         address player1 = makeAddr("player1");
         address player2 = makeAddr("player2");
         address player3 = makeAddr("player3");

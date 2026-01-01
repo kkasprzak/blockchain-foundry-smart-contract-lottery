@@ -1,0 +1,12 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "import-path-check": "off",
+    "gas-indexed-events": "off",
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "use-natspec": "off",
+    "no-console": "off",
+    "gas-custom-errors": "off",
+    "reason-string": "off"
+  }
+}
