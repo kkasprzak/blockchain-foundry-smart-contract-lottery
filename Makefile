@@ -73,10 +73,12 @@ slither:
 	@echo "Running Slither static analysis..."
 	@slither . --foundry-compile-all --filter-paths "lib/,test/" --exclude-informational --exclude-optimization
 
-# Run Solhint linter
+# Run linters (Solhint + Forge lint)
 lint:
 	@echo "Running Solhint linter..."
 	@solhint 'src/**/*.sol'
+	@echo "Running Forge linter..."
+	@forge lint
 
 # Create new VRF subscription
 create-subscription:
