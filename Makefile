@@ -1,4 +1,4 @@
-.PHONY: help install build test clean deploy-sepolia deploy-local slither
+.PHONY: help install build test clean deploy-sepolia deploy-local slither lint
 .PHONY: create-subscription fund-subscription add-consumer subscription-status
 .PHONY: register-upkeep fund-upkeep upkeep-status
 
@@ -15,8 +15,9 @@ help:
 	@echo "Testing Commands:"
 	@echo "  test             Run all tests"
 	@echo ""
-	@echo "Security Commands:"
+	@echo "Security & Quality Commands:"
 	@echo "  slither          Run Slither static analysis"
+	@echo "  lint             Run Solhint linter"
 	@echo ""
 	@echo "Deployment Commands:"
 	@echo "  deploy-local     Deploy to local network (anvil)"
@@ -71,6 +72,11 @@ deploy-local:
 slither:
 	@echo "Running Slither static analysis..."
 	@slither . --foundry-compile-all --filter-paths "lib/,test/" --exclude-informational --exclude-optimization
+
+# Run Solhint linter
+lint:
+	@echo "Running Solhint linter..."
+	@solhint 'src/**/*.sol'
 
 # Create new VRF subscription
 create-subscription:
