@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {HelperConfig, AutomationConfig} from "./HelperConfig.s.sol";
+import {HelperConfig, ChainlinkAutomationConfig} from "./HelperConfig.s.sol";
 
 contract FundUpkeep is Script {
     uint96 public constant DEFAULT_FUND_AMOUNT = 2e18;
@@ -16,12 +16,13 @@ contract FundUpkeep is Script {
 
     function fundUpkeep(uint256 upkeepId, uint96 amount) public {
         HelperConfig helperConfig = new HelperConfig();
-        AutomationConfig automationConfig = helperConfig.automationConfigForChain(block.chainid);
+        ChainlinkAutomationConfig chainlinkAutomationConfig =
+            helperConfig.chainlinkAutomationConfigForChain(block.chainid);
 
         console.log("Funding upkeep:", upkeepId);
         console.log("Amount (LINK wei):", amount);
 
-        automationConfig.fundUpkeep(upkeepId, amount);
+        chainlinkAutomationConfig.fundUpkeep(upkeepId, amount);
 
         console.log("Upkeep funded successfully!");
         console.log("View at: https://automation.chain.link/sepolia/", upkeepId);

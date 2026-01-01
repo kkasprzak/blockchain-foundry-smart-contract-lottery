@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {HelperConfig, AutomationConfig} from "./HelperConfig.s.sol";
+import {HelperConfig, ChainlinkAutomationConfig} from "./HelperConfig.s.sol";
 
 contract RegisterUpkeep is Script {
     uint32 public constant DEFAULT_GAS_LIMIT = 200000;
@@ -22,14 +22,15 @@ contract RegisterUpkeep is Script {
         returns (uint256)
     {
         HelperConfig helperConfig = new HelperConfig();
-        AutomationConfig automationConfig = helperConfig.automationConfigForChain(block.chainid);
+        ChainlinkAutomationConfig chainlinkAutomationConfig =
+            helperConfig.chainlinkAutomationConfigForChain(block.chainid);
 
         console.log("Registering upkeep for contract:", raffleAddress);
         console.log("Upkeep name:", upkeepName);
         console.log("Gas limit:", gasLimit);
         console.log("Fund amount (LINK wei):", fundAmount);
 
-        uint256 upkeepId = automationConfig.registerUpkeep(upkeepName, raffleAddress, gasLimit, fundAmount);
+        uint256 upkeepId = chainlinkAutomationConfig.registerUpkeep(upkeepName, raffleAddress, gasLimit, fundAmount);
 
         console.log("Upkeep registered successfully!");
         console.log("Upkeep ID:", upkeepId);

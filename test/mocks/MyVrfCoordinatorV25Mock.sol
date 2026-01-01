@@ -6,7 +6,7 @@ import {
     EnumerableSet
 } from "lib/chainlink-brownie-contracts/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.7.3/contracts/utils/structs/EnumerableSet.sol";
 
-contract MyVRFCoordinatorV2_5Mock is VRFCoordinatorV2_5Mock {
+contract MyVrfCoordinatorV25Mock is VRFCoordinatorV2_5Mock {
     using EnumerableSet for EnumerableSet.UintSet;
 
     constructor(uint96 _baseFee, uint96 _gasPrice, int256 _weiPerUnitLink)
@@ -46,7 +46,7 @@ contract MyVRFCoordinatorV2_5Mock is VRFCoordinatorV2_5Mock {
         return subId;
     }
 
-    function simulateVRFCoordinatorCallback(uint256 requestId, address raffleAddress, uint256 randomWord) external {
+    function simulateVrfCoordinatorCallback(uint256 requestId, address raffleAddress, uint256 randomWord) external {
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = randomWord;
 

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {PerformUpkeep} from "../../script/Interactions.s.sol";
-import {MyVRFCoordinatorV2_5Mock} from "../mocks/MyVRFCoordinatorV2_5Mock.sol";
+import {MyVrfCoordinatorV25Mock} from "../mocks/MyVrfCoordinatorV25Mock.sol";
 import {LogHelpers} from "../helpers/LogHelpers.sol";
 
 contract InteractionsTest is Test {
     using LogHelpers for Vm.Log[];
 
-    Raffle raffle;
-    MyVRFCoordinatorV2_5Mock myVRFCoordinatorV2_5Mock;
+    Raffle private raffle;
+    MyVrfCoordinatorV25Mock private vrfCoordinatorMock;
 
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
@@ -21,7 +21,7 @@ contract InteractionsTest is Test {
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
         raffle = deployRaffle.run();
-        myVRFCoordinatorV2_5Mock = MyVRFCoordinatorV2_5Mock(address(raffle.s_vrfCoordinator()));
+        vrfCoordinatorMock = MyVrfCoordinatorV25Mock(address(raffle.s_vrfCoordinator()));
     }
 
     function testMultiPlayerScenario() public {
@@ -61,9 +61,7 @@ contract InteractionsTest is Test {
         vm.expectEmit(true, true, false, true, address(raffle));
         emit DrawCompleted(1, player2, expectedPrizePool);
 
-        myVRFCoordinatorV2_5Mock.simulateVRFCoordinatorCallback(
-            vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1
-        );
+        vrfCoordinatorMock.simulateVrfCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
 
         address winner = vm.getRecordedLogs().getWinner();
         uint256 balanceBeforeClaim = winner.balance;
