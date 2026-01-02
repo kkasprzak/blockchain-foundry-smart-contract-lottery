@@ -11,9 +11,9 @@ contract AnvilNetworkConfig is NetworkConfig {
 
         // Create VRF Coordinator Mock
         MyVrfCoordinatorV25Mock vrfCoordinatorMock = new MyVrfCoordinatorV25Mock(
-            0.002 ether, // Base fee: 0.1 LINK
-            40 gwei, // Gas price link: 1 gwei
-            0.004 ether // Wei per unit link: 4000000000000000000 (4e18)
+            0.002 ether,
+            40 gwei,
+            0.004 ether
         );
 
         uint256 subscriptionId = vrfCoordinatorMock.deterministicCreateSubscription();
@@ -24,9 +24,9 @@ contract AnvilNetworkConfig is NetworkConfig {
             entranceFee,
             interval,
             address(vrfCoordinatorMock),
-            0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae, // Key hash
+            0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             subscriptionId,
-            500000 // Callback gas limit
+            500000
         );
 
         vrfCoordinatorMock.addConsumer(subscriptionId, address(raffle));
