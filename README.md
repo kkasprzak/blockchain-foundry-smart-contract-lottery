@@ -57,6 +57,7 @@ Players pay a configurable entry fee to join lottery rounds. When the predetermi
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
 - [Slither](https://github.com/crytic/slither) (optional, for security analysis)
+- [Solhint](https://protofire.github.io/solhint/) (optional, for linting)
 
 ### Installation
 
@@ -76,12 +77,17 @@ forge install
 brew install slither-analyzer
 ```
 
-4. Build the project:
+4. Install Solhint (optional, for linting):
+```bash
+npm install -g solhint
+```
+
+5. Build the project:
 ```bash
 forge build
 ```
 
-5. Run tests to verify setup:
+6. Run tests to verify setup:
 ```bash
 forge test
 ```

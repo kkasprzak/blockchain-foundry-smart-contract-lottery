@@ -31,6 +31,18 @@ jobs:
           forge fmt --check
         id: fmt
 
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Install Solhint
+        run: npm install -g solhint
+
+      - name: Run Solhint
+        run: make lint
+        id: solhint
+
       - name: Run Forge build
         run: |
           forge build --sizes

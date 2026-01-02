@@ -88,8 +88,8 @@ Follow the official Solidity style guide naming conventions:
 - Avoid single letters like `l`, `O`, `I`
 - Use `_leadingUnderscore` for internal/private functions
 - Use `trailingUnderscore_` to avoid naming collisions
-- Use `s_` for storage/state variables (can be modified after deployment)
-- Use `i_` for immutable variables (set once in constructor, never changed)
+- **State variables:** mixedCase (`players`, `raffleState`, `prizePool`)
+- **Immutables:** SCREAMING_SNAKE_CASE (`ENTRANCE_FEE`, `INTERVAL`) - set once in constructor
 
 ### Order of Layout
 
