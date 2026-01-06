@@ -25,12 +25,12 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     uint256 private immutable ENTRANCE_FEE;
     uint256 private immutable INTERVAL;
-    address payable[] private players;
     uint256 private lastTimeStamp;
     bytes32 private immutable KEY_HASH;
     uint256 private immutable SUBSCRIPTION_ID;
     uint32 private immutable CALLBACK_GAS_LIMIT;
 
+    address payable[] private players;
     uint256 private requestId;
     RaffleState private raffleState;
     uint256 private roundNumber;

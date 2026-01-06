@@ -80,6 +80,7 @@ Follow the official Solidity style guide naming conventions:
 - **Functions:** mixedCase (`getBalance`, `transfer`)
 - **Variables:** mixedCase (`totalSupply`, `balancesOf`)
 - **Constants:** ALL_UPPERCASE (`MAX_BLOCKS`, `TOKEN_NAME`)
+- **Immutables:** SCREAMING_SNAKE_CASE (`ENTRANCE_FEE`, `INTERVAL`) - set once in constructor
 - **Modifiers:** mixedCase (`onlyBy`, `onlyAfter`)
 - **Enums:** CapWords (`TokenGroup`, `Frame`)
 
@@ -89,7 +90,6 @@ Follow the official Solidity style guide naming conventions:
 - Use `_leadingUnderscore` for internal/private functions
 - Use `trailingUnderscore_` to avoid naming collisions
 - **State variables:** mixedCase (`players`, `raffleState`, `prizePool`)
-- **Immutables:** SCREAMING_SNAKE_CASE (`ENTRANCE_FEE`, `INTERVAL`) - set once in constructor
 
 ### Order of Layout
 
