@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
@@ -8,6 +8,9 @@ import {
     AutomationCompatibleInterface
 } from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
+/// @title Raffle
+/// @author Karol Kasprzak
+/// @notice A decentralized lottery contract using Chainlink VRF for randomness and Automation for scheduling
 contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleInterface {
     enum RaffleState {
         OPEN,
@@ -20,24 +23,43 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     uint256 private constant NO_PRIZE = 0;
     bytes private constant EMPTY_PERFORM_DATA = "";
 
-    uint256 private immutable i_entranceFee;
-    uint256 private immutable i_interval;
-    address payable[] private s_players;
-    uint256 private s_lastTimeStamp;
-    bytes32 private immutable i_keyHash;
-    uint256 private immutable i_subscriptionId;
-    uint32 private immutable i_callbackGasLimit;
+    uint256 private immutable ENTRANCE_FEE;
+    uint256 private immutable INTERVAL;
+    uint256 private lastTimeStamp;
+    bytes32 private immutable KEY_HASH;
+    uint256 private immutable SUBSCRIPTION_ID;
+    uint32 private immutable CALLBACK_GAS_LIMIT;
 
-    uint256 private s_requestId;
-    RaffleState private s_raffleState;
-    uint256 private s_roundNumber;
-    uint256 private s_prizePool;
-    mapping(address => uint256) private s_unclaimedPrizes;
+    address payable[] private players;
+    uint256 private requestId;
+    RaffleState private raffleState;
+    uint256 private roundNumber;
+    uint256 private prizePool;
+    mapping(address => uint256) private unclaimedPrizes;
 
+    /// @notice Emitted when a player enters the raffle
+    /// @param roundNumber The current round number
+    /// @param player The address of the player who entered
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
+
+    /// @notice Emitted when a draw is requested from Chainlink VRF
+    /// @param roundNumber The round number for which the draw was requested
     event DrawRequested(uint256 indexed roundNumber);
+
+    /// @notice Emitted when a draw is completed and winner is selected
+    /// @param roundNumber The round number that was drawn
+    /// @param winner The address of the winner (address(0) if no players)
+    /// @param prize The prize amount awarded to the winner
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
+
+    /// @notice Emitted when a winner successfully claims their prize
+    /// @param winner The address of the winner who claimed
+    /// @param amount The amount claimed
     event PrizeClaimed(address indexed winner, uint256 amount);
+
+    /// @notice Emitted when a prize claim fails (e.g., transfer rejected)
+    /// @param winner The address of the winner whose claim failed
+    /// @param amount The amount that failed to transfer
     event PrizeClaimFailed(address indexed winner, uint256 amount);
 
     error Raffle__InvalidEntranceFee();
@@ -49,6 +71,13 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     error Raffle__DrawingNotAllowed();
     error Raffle__NoUnclaimedPrize();
 
+    /// @notice Creates a new Raffle contract
+    /// @param entranceFee The fee required to enter the raffle (must be > 0)
+    /// @param interval The time window in seconds during which players can enter
+    /// @param vrfCoordinator The Chainlink VRF Coordinator address
+    /// @param keyHash The Chainlink VRF key hash
+    /// @param subscriptionId The Chainlink VRF subscription ID
+    /// @param callbackGasLimit The gas limit for the VRF callback
     constructor(
         uint256 entranceFee,
         uint256 interval,
@@ -65,19 +94,20 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
             revert Raffle__InvalidParameter("Interval cannot be zero");
         }
 
-        i_entranceFee = entranceFee;
-        i_interval = interval;
-        s_lastTimeStamp = block.timestamp;
-        i_keyHash = keyHash;
-        i_subscriptionId = subscriptionId;
-        i_callbackGasLimit = callbackGasLimit;
+        ENTRANCE_FEE = entranceFee;
+        INTERVAL = interval;
+        lastTimeStamp = block.timestamp;
+        KEY_HASH = keyHash;
+        SUBSCRIPTION_ID = subscriptionId;
+        CALLBACK_GAS_LIMIT = callbackGasLimit;
 
-        s_raffleState = RaffleState.OPEN;
-        s_roundNumber = 1;
+        raffleState = RaffleState.OPEN;
+        roundNumber = 1;
     }
 
+    /// @notice Allows a player to enter the raffle by paying the entrance fee
     function enterRaffle() external payable {
-        if (msg.value != i_entranceFee) {
+        if (msg.value != ENTRANCE_FEE) {
             revert Raffle__InvalidEntranceFee();
         }
 
@@ -90,11 +120,12 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         }
 
         _addPlayerToRaffle(msg.sender);
-        s_prizePool += msg.value;
+        prizePool += msg.value;
 
-        emit RaffleEntered(s_roundNumber, msg.sender);
+        emit RaffleEntered(roundNumber, msg.sender);
     }
 
+    /// @notice Called by Chainlink Automation to execute the draw when conditions are met
     // slither-disable-next-line reentrancy-events,timestamp
     function performUpkeep(
         bytes calldata /* performData */
@@ -106,29 +137,30 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
             revert Raffle__DrawingNotAllowed();
         }
 
-        if (s_players.length == 0) {
-            uint256 roundNumber = s_roundNumber;
+        if (players.length == 0) {
+            uint256 currentRound = roundNumber;
             _resetRaffleForNextRound();
-            emit DrawCompleted(roundNumber, NO_WINNER, NO_PRIZE);
+            emit DrawCompleted(currentRound, NO_WINNER, NO_PRIZE);
             return;
         }
 
-        s_raffleState = RaffleState.DRAWING;
-        s_requestId = _requestRandomWords();
-        emit DrawRequested(s_roundNumber);
+        raffleState = RaffleState.DRAWING;
+        requestId = _requestRandomWords();
+        emit DrawRequested(roundNumber);
     }
 
+    /// @notice Allows winners to claim their unclaimed prizes
     // slither-disable-next-line reentrancy-eth
     function claimPrize() external nonReentrant {
-        uint256 amount = s_unclaimedPrizes[msg.sender];
+        uint256 amount = unclaimedPrizes[msg.sender];
         if (amount == 0) {
             revert Raffle__NoUnclaimedPrize();
         }
-        s_unclaimedPrizes[msg.sender] = 0;
+        unclaimedPrizes[msg.sender] = 0;
 
         (bool success,) = payable(msg.sender).call{value: amount}("");
         if (!success) {
-            s_unclaimedPrizes[msg.sender] = amount;
+            unclaimedPrizes[msg.sender] = amount;
             emit PrizeClaimFailed(msg.sender, amount);
             return;
         }
@@ -136,10 +168,15 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         emit PrizeClaimed(msg.sender, amount);
     }
 
+    /// @notice Returns the entrance fee required to enter the raffle
+    /// @return The entrance fee in wei
     function getEntranceFee() external view returns (uint256) {
-        return i_entranceFee;
+        return ENTRANCE_FEE;
     }
 
+    /// @notice Checks if the raffle is ready for a draw
+    /// @return upkeepNeeded True if the entry window is closed and raffle is open
+    /// @return performData Empty bytes (not used)
     // slither-disable-next-line timestamp
     function checkUpkeep(
         bytes memory /* checkData */
@@ -147,16 +184,13 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         public
         view
         override
-        returns (
-            bool upkeepNeeded,
-            bytes memory /* performData */
-        )
+        returns (bool upkeepNeeded, bytes memory performData)
     {
         return (_isEntryWindowClosed() && _isRaffleInState(RaffleState.OPEN), EMPTY_PERFORM_DATA);
     }
 
     // slither-disable-next-line reentrancy-eth
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords)
+    function fulfillRandomWords(uint256 incomingRequestId, uint256[] calldata randomWords)
         internal
         virtual
         override
@@ -166,38 +200,38 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
             revert Raffle__RaffleIsNotDrawing();
         }
 
-        if (s_requestId != requestId) {
+        if (requestId != incomingRequestId) {
             revert Raffle__InvalidRequestId();
         }
 
-        address winner = s_players[randomWords[0] % s_players.length];
-        uint256 prizeAmount = s_prizePool;
-        uint256 roundNumber = s_roundNumber;
+        address winner = players[randomWords[0] % players.length];
+        uint256 prizeAmount = prizePool;
+        uint256 currentRound = roundNumber;
 
-        s_unclaimedPrizes[winner] += prizeAmount;
+        unclaimedPrizes[winner] += prizeAmount;
         _resetRaffleForNextRound();
 
-        emit DrawCompleted(roundNumber, winner, prizeAmount);
+        emit DrawCompleted(currentRound, winner, prizeAmount);
     }
 
     function _resetRaffleForNextRound() private {
-        s_players = new address payable[](0);
-        s_lastTimeStamp = block.timestamp;
-        s_raffleState = RaffleState.OPEN;
-        s_roundNumber++;
-        s_prizePool = 0;
+        players = new address payable[](0);
+        lastTimeStamp = block.timestamp;
+        raffleState = RaffleState.OPEN;
+        ++roundNumber;
+        prizePool = 0;
     }
 
     function _addPlayerToRaffle(address player) private {
-        s_players.push(payable(player));
+        players.push(payable(player));
     }
 
     function _requestRandomWords() private returns (uint256) {
         VRFV2PlusClient.RandomWordsRequest memory req = VRFV2PlusClient.RandomWordsRequest({
-            keyHash: i_keyHash,
-            subId: i_subscriptionId,
+            keyHash: KEY_HASH,
+            subId: SUBSCRIPTION_ID,
             requestConfirmations: REQUEST_CONFIRMATIONS,
-            callbackGasLimit: i_callbackGasLimit,
+            callbackGasLimit: CALLBACK_GAS_LIMIT,
             numWords: NUM_WORDS,
             extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
         });
@@ -207,7 +241,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     // slither-disable-next-line timestamp
     function _isEntryWindowOpen() private view returns (bool) {
-        return block.timestamp - s_lastTimeStamp <= i_interval;
+        return block.timestamp - lastTimeStamp < INTERVAL + 1;
     }
 
     function _isEntryWindowClosed() private view returns (bool) {
@@ -215,6 +249,6 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     }
 
     function _isRaffleInState(RaffleState state) private view returns (bool) {
-        return s_raffleState == state;
+        return raffleState == state;
     }
 }

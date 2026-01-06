@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {HelperConfig, ChainlinkConfig} from "./HelperConfig.s.sol";
+import {HelperConfig, ChainlinkVRFConfig} from "./HelperConfig.s.sol";
 
 contract CreateSubscription is Script {
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
-        ChainlinkConfig chainlinkConfig = helperConfig.chainlinkConfigForChain(block.chainid);
+        ChainlinkVRFConfig chainlinkVrfConfig = helperConfig.chainlinkVrfConfigForChain(block.chainid);
 
-        chainlinkConfig.createSubscription();
+        chainlinkVrfConfig.createSubscription();
 
         console.log("Subscription created successfully!");
         console.log("To get your subscription ID:");

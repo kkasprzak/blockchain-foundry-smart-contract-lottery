@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
 import {HelperConfig, NetworkConfig} from "./HelperConfig.s.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract DeployRaffle is Script {
     uint256 public constant DEFAULT_ENTRANCE_FEE = 0.01 ether;
     uint256 public constant DEFAULT_INTERVAL = 300; // 5 minutes for testing
-
-    function setUp() public {}
 
     function run() public returns (Raffle) {
         return deployRaffle(DEFAULT_ENTRANCE_FEE, DEFAULT_INTERVAL);
