@@ -34,9 +34,13 @@ contract SepoliaChainlinkAutomationConfig is ChainlinkAutomationConfig {
         override
         returns (uint256)
     {
+        require(amount > 0, "Amount must be greater than 0");
+        require(upkeepContract != address(0), "Invalid upkeep contract address");
+        require(gasLimit > 0, "Gas limit must be greater than 0");
+
         vm.startBroadcast();
 
-        LinkTokenInterface(LINK_TOKEN).approve(AUTOMATION_REGISTRAR, amount);
+        require(LinkTokenInterface(LINK_TOKEN).approve(AUTOMATION_REGISTRAR, amount), "LINK approval failed");
 
         RegistrationParams memory params = RegistrationParams({
             name: name,
@@ -59,9 +63,12 @@ contract SepoliaChainlinkAutomationConfig is ChainlinkAutomationConfig {
     }
 
     function fundUpkeep(uint256 upkeepId, uint96 amount) external override {
+        require(upkeepId > 0, "Invalid upkeep ID");
+        require(amount > 0, "Amount must be greater than 0");
+
         vm.startBroadcast();
 
-        LinkTokenInterface(LINK_TOKEN).approve(AUTOMATION_REGISTRY, amount);
+        require(LinkTokenInterface(LINK_TOKEN).approve(AUTOMATION_REGISTRY, amount), "LINK approval failed");
         IKeeperRegistryMaster(AUTOMATION_REGISTRY).addFunds(upkeepId, amount);
 
         vm.stopBroadcast();

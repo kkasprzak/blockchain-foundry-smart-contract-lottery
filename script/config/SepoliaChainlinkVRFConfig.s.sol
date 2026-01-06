@@ -20,14 +20,23 @@ contract SepoliaChainlinkVRFConfig is ChainlinkVRFConfig {
     }
 
     function fundSubscription(uint256 subscriptionId, uint256 amount) external override {
+        require(subscriptionId > 0, "Invalid subscription ID");
+        require(amount > 0, "Amount must be greater than 0");
+
         vm.startBroadcast();
 
-        IERC677(LINK_TOKEN).transferAndCall(VRF_COORDINATOR, amount, abi.encode(subscriptionId));
+        require(
+            IERC677(LINK_TOKEN).transferAndCall(VRF_COORDINATOR, amount, abi.encode(subscriptionId)),
+            "LINK transfer failed"
+        );
 
         vm.stopBroadcast();
     }
 
     function addConsumer(uint256 subscriptionId, address consumer) external override {
+        require(subscriptionId > 0, "Invalid subscription ID");
+        require(consumer != address(0), "Invalid consumer address");
+
         vm.startBroadcast();
 
         IVRFSubscriptionV2Plus(VRF_COORDINATOR).addConsumer(subscriptionId, consumer);
