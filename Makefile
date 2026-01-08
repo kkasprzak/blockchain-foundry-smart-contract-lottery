@@ -1,6 +1,7 @@
 .PHONY: help install build test clean deploy-sepolia deploy-local slither lint
 .PHONY: create-subscription fund-subscription add-consumer subscription-status
 .PHONY: register-upkeep fund-upkeep upkeep-status
+.PHONY: frontend-dev frontend-build indexer-dev indexer-build
 
 # Default target - show help when no target specified
 help:
@@ -33,6 +34,14 @@ help:
 	@echo "  register-upkeep        Register new upkeep for Raffle contract"
 	@echo "  fund-upkeep            Fund existing upkeep with LINK"
 	@echo "  upkeep-status          Check upkeep balance and status"
+	@echo ""
+	@echo "Frontend Commands:"
+	@echo "  frontend-dev           Start frontend development server"
+	@echo "  frontend-build         Build frontend for production"
+	@echo ""
+	@echo "Indexer Commands:"
+	@echo "  indexer-dev            Start indexer development server"
+	@echo "  indexer-build          Start indexer in production mode"
 	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make test                         # Quick testing during development"
@@ -117,3 +126,17 @@ fund-upkeep:
 # Check upkeep status
 upkeep-status:
 	@./script/get-upkeep-details.sh
+
+# Frontend commands
+frontend-dev:
+	cd frontend && pnpm dev
+
+frontend-build:
+	cd frontend && pnpm build
+
+# Indexer commands
+indexer-dev:
+	cd indexer && pnpm dev
+
+indexer-build:
+	cd indexer && pnpm start
