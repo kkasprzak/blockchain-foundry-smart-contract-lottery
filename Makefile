@@ -1,7 +1,7 @@
 .PHONY: help install build test clean deploy-sepolia deploy-local slither lint
 .PHONY: create-subscription fund-subscription add-consumer subscription-status
 .PHONY: register-upkeep fund-upkeep upkeep-status
-.PHONY: frontend-dev frontend-build indexer-dev indexer-build
+.PHONY: frontend-dev frontend-build indexer-dev indexer-codegen
 
 # Default target - show help when no target specified
 help:
@@ -41,7 +41,7 @@ help:
 	@echo ""
 	@echo "Indexer Commands:"
 	@echo "  indexer-dev            Start indexer development server"
-	@echo "  indexer-build          Start indexer in production mode"
+	@echo "  indexer-codegen        Generate Ponder types from config"
 	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make test                         # Quick testing during development"
@@ -138,5 +138,5 @@ frontend-build:
 indexer-dev:
 	cd indexer && pnpm dev
 
-indexer-build:
-	cd indexer && pnpm start
+indexer-codegen:
+	cd indexer && pnpm codegen
