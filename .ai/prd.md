@@ -45,10 +45,12 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
 ## 5. Product borders
 
-- In scope: Solidity smart contract on Sepolia Ethereum testnet; integration with Chainlink VRF v2 and Chainlink Automation; unit and integration tests; CI/CD pipeline in GitHub Actions.
-- Out of scope: Frontend UI; mainnet deployment; token-based entry fee (only native ETH); fees or commissions taken by contract; user authentication outside of Ethereum address; manual draw processes.
+- In scope: Solidity smart contract on Sepolia Ethereum testnet; integration with Chainlink VRF v2 and Chainlink Automation; React frontend with wallet integration; Ponder blockchain indexer; unit and integration tests; CI/CD pipeline in GitHub Actions.
+- Out of scope: Mainnet deployment; token-based entry fee (only native ETH); fees or commissions taken by contract; user authentication outside of Ethereum address; manual draw processes.
 
 ## 6. User stories
+
+### Smart Contract User Stories
 
 - **US-001: Deploy Basic Lottery Contract**
 
@@ -214,6 +216,109 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the contract is live on the test network, when time passes and conditions are met, then the system executes draws automatically
   - Given a draw completes on the test network, when randomness is provided, then a winner is selected and the result is publicly visible
   - Given the system is operational, when I check service status dashboards, then I can monitor funding levels and request history
+
+### Frontend User Stories
+
+- **US-012: View Round Information**
+
+  As a player,
+  I want to see current round information (entrance fee, prize pool, time until drawing),
+  So that I can decide whether to enter the raffle.
+
+  **Acceptance Criteria:**
+
+  - Given I visit the raffle website, when the page loads, then I see the entrance fee displayed in ETH
+  - Given the current round has players, when I view the page, then I see the prize pool (accumulated entrance fees)
+  - Given the current round is open, when I view the page, then I see the number of players in the current round
+  - Given the entry window is active, when I view the page, then I see the time remaining until drawing
+  - Given the blockchain state changes, when a new player enters, then the displayed data refreshes automatically
+
+- **US-013: Connect Wallet**
+
+  As a player,
+  I want to connect my Ethereum wallet,
+  So that I can enter the raffle.
+
+  **Acceptance Criteria:**
+
+  - Given I am not connected, when I visit the page, then I see a "Connect Wallet" button
+  - Given I click "Connect Wallet", when the modal opens, then I see available wallet options (MetaMask, WalletConnect, etc.)
+  - Given I select a wallet and approve the connection, when the connection succeeds, then my address is displayed (truncated)
+  - Given my wallet is connected, when I view the header, then I see my ETH balance
+  - Given my wallet is connected, when I click my address, then I can disconnect my wallet
+
+- **US-014: Enter Raffle**
+
+  As a player,
+  I want to pay the entrance fee to join the current round,
+  So that I have a chance to win the prize pool.
+
+  **Acceptance Criteria:**
+
+  - Given my wallet is connected, when I view the page, then I see an "Enter Raffle" button
+  - Given the entry window is closed, when I view the button, then it is disabled with explanatory text
+  - Given I click "Enter Raffle", when the transaction is initiated, then my wallet prompts me to confirm the exact entrance fee amount
+  - Given I confirm the transaction, when it is pending, then I see a "pending" status indicator
+  - Given the transaction is confirmed, when the blockchain updates, then I see myself in the players list
+  - Given I already entered this round, when I click "Enter Raffle" again, then I am added as a separate entry (increasing my chances)
+  - Given the transaction fails, when the error occurs, then I see a clear error message
+
+- **US-015: View My Entries**
+
+  As a player who entered the raffle,
+  I want to see my entries in the current round,
+  So that I know my chances of winning.
+
+  **Acceptance Criteria:**
+
+  - Given I entered the current round, when I view the page, then I see how many times I entered
+  - Given I have entries, when I view my stats, then I see my winning probability (proportional to my number of entries)
+  - Given another player enters, when the data refreshes, then the players list updates in real-time
+  - Given I view the players list, when looking at other players, then their addresses are displayed truncated
+
+- **US-016: View Drawing Result**
+
+  As a player,
+  I want to see who won when a drawing completes,
+  So that I know the round outcome.
+
+  **Acceptance Criteria:**
+
+  - Given a drawing completes, when the DrawCompleted event is emitted, then the winner address is displayed
+  - Given the drawing has a winner, when I view the result, then I see the prize pool amount they won
+  - Given I am the winner, when viewing the result, then I see a clear visual indication ("You won!")
+  - Given no players entered the round, when the round completes, then I see "No winner - round reset"
+  - Given I want to see past rounds, when I view round history, then I see previous winners and prize amounts
+
+- **US-017: Claim Prize**
+
+  As a winner,
+  I want to claim my prize,
+  So that I receive my ETH winnings.
+
+  **Acceptance Criteria:**
+
+  - Given I have unclaimed winnings, when I view the page, then I see a "Claim Prize" button
+  - Given I have unclaimed winnings, when I view my balance, then I see the prize amount available to claim
+  - Given I click "Claim Prize", when the transaction is initiated, then my wallet prompts me to confirm
+  - Given the claim transaction is pending, when I view the page, then I see the transaction status
+  - Given the claim succeeds, when the transaction confirms, then my wallet balance updates
+  - Given I have no unclaimed prizes, when I view the page, then the "Claim Prize" button is not visible
+
+- **US-018: Wheel of Fortune Visualization**
+
+  As a player,
+  I want to see players displayed as a spinning wheel during the drawing,
+  So that the raffle experience feels more exciting and engaging.
+
+  **Acceptance Criteria:**
+
+  - Given there are players in the round, when I view the page, then players are shown as wheel segments (instead of a list)
+  - Given a player has multiple entries, when viewing the wheel, then their segment size is proportional to their number of entries
+  - Given I am a player, when viewing the wheel, then my segment is highlighted and labeled
+  - Given a drawing occurs, when the DrawCompleted event is received, then the wheel spins with animation
+  - Given the wheel is spinning, when it slows down, then it stops on the winner's segment
+  - Given the animation plays, when the wheel spins, then it has smooth easing and inertia effects
 
 ## 7. Success metrics
 
