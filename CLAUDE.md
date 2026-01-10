@@ -4,18 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-This is a Foundry-based Ethereum smart contract project with the following structure:
+This is a multi-component blockchain project with the following structure:
 
+### Smart Contracts (Foundry)
 - **src/**: Smart contract source files (main contracts)
 - **test/**: Test files using Foundry's testing framework with forge-std
 - **script/**: Deployment and interaction scripts
 - **lib/**: Dependencies (forge-std library for testing utilities)
 - **foundry.toml**: Project configuration file
 
+### Indexer (Ponder)
+- **indexer/**: Ponder-based blockchain indexer
+- **Package manager**: **pnpm** (NOT npm)
+- **Purpose**: Index blockchain events and provide API via Hono
+
+### Frontend (React)
+- **frontend/**: React-based user interface
+- **Package manager**: **pnpm** (NOT npm)
+- **Purpose**: Web3 application for interacting with smart contracts
+
 ## Common Development Commands
 
-### Build and Test
+### Smart Contracts (Foundry)
 
+**Build and Test:**
 ```bash
 forge build                    # Compile all contracts
 forge test                     # Run all tests
@@ -23,29 +35,51 @@ forge test --match-test <name> # Run specific test
 forge test -vvv                # Run tests with verbose output
 ```
 
-### Code Quality
-
+**Code Quality:**
 ```bash
 forge fmt                      # Format Solidity code
 forge snapshot                 # Generate gas usage snapshots
 ```
 
-### Local Development
-
+**Local Development:**
 ```bash
 anvil                          # Start local Ethereum node
 ```
 
-### Deployment
-
+**Deployment:**
 ```bash
 forge script script/<ScriptName>.s.sol:<ContractName> --rpc-url <rpc_url> --private-key <private_key>
 ```
 
-### Blockchain Interaction
-
+**Blockchain Interaction:**
 ```bash
 cast <subcommand>              # Swiss army knife for EVM interactions
+```
+
+### Indexer (Ponder)
+
+**CRITICAL: Always use pnpm, NOT npm**
+
+```bash
+cd indexer                     # Navigate to indexer directory
+pnpm install                   # Install dependencies
+pnpm dev                       # Start development server
+pnpm start                     # Start production server
+pnpm lint                      # Run ESLint
+pnpm typecheck                 # Run TypeScript type checking
+```
+
+### Frontend (React)
+
+**CRITICAL: Always use pnpm, NOT npm**
+
+```bash
+cd frontend                    # Navigate to frontend directory
+pnpm install                   # Install dependencies
+pnpm dev                       # Start development server
+pnpm build                     # Build for production
+pnpm lint                      # Run ESLint
+pnpm typecheck                 # Run TypeScript type checking
 ```
 
 ## Testing Framework
