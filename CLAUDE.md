@@ -496,11 +496,32 @@ This gives us immediate direction - let's implement the entry window reset verif
 ### Creating Pull Request
 
 1. **Pre-push verification (REQUIRED):**
+
+   Run checks for all modified components to catch issues before CI:
+
+   **Smart Contracts (always run if any Solidity files modified):**
    ```bash
    forge test      # All tests must pass
    forge fmt       # Fix any formatting issues
    ```
-   Never push without running these checks - CI will fail otherwise.
+
+   **Frontend (run if any files in `frontend/` modified):**
+   ```bash
+   cd frontend
+   pnpm lint       # ESLint must pass
+   pnpm build      # TypeScript + build must succeed
+   cd ..
+   ```
+
+   **Indexer (run if any files in `indexer/` modified):**
+   ```bash
+   cd indexer
+   pnpm lint       # ESLint must pass
+   pnpm typecheck  # TypeScript must pass
+   cd ..
+   ```
+
+   **CRITICAL:** Never push without running these checks - CI will fail otherwise and waste time.
 
 2. **Push feature branch:**
    ```bash
