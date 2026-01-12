@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## User Story Status Tracking
+
+All User Stories in `.ai/prd.md` are tagged with their current status using the following labels:
+
+- **[BACKLOG]** - Not yet ready for development; may need refinement or dependencies
+- **[READY]** - Fully defined and ready to start development; can be picked up immediately
+- **[IN PROGRESS]** - Currently being worked on; tracked as an active GitHub issue
+- **[DONE]** - Implementation completed, tested, and merged to main
+
 ## Project Architecture
 
 This is a multi-component blockchain project with the following structure:
