@@ -52,7 +52,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
 ### Smart Contract User Stories
 
-- **US-001: Deploy Basic Lottery Contract**
+- **US-001: Deploy Basic Lottery Contract** [DONE]
 
   As a lottery operator,
   I want to deploy a simple lottery contract on Sepolia testnet,
@@ -65,7 +65,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the contract is deployed, when I verify on Etherscan, then the constructor parameters are visible and correct
   - Given the contract is deployed, when I check ownership, then I am set as the initial owner
 
-- **US-002: Enter Lottery Round**
+- **US-002: Enter Lottery Round** [DONE]
 
   As a player,
   I want to pay an entry fee to join the current lottery round,
@@ -81,7 +81,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given I already entered the current round, when I call enterRaffle() again with the exact entry fee, then I am added again as a separate entry
   - Given I enter multiple times, when the winner is selected, then my probability of winning is proportional to my number of entries
 
-- **US-003: Manual Draw Control**
+- **US-003: Manual Draw Control** [DONE]
 
   As a lottery operator,
   I want to manually trigger draws during the development phase,
@@ -96,7 +96,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the entry window is still active, when I attempt a draw, then the transaction reverts with "Raffle\_\_RaffleNotReady"
   - Given a winner is selected, when the draw completes, then winner selection uses block.timestamp % participants.length for pseudo-randomness
 
-- **US-004: Automatic Prize Distribution**
+- **US-004: Automatic Prize Distribution** [DONE]
 
   As a lottery winner,
   I want to automatically receive the entire prize pool when selected,
@@ -110,7 +110,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the prize is distributed, when the transaction completes, then a new lottery round starts automatically with reset participants
   - Given the prize transfer fails, when the payout is attempted, then the transaction reverts and the lottery state remains unchanged
 
-- **US-005: Integrate Chainlink VRF**
+- **US-005: Integrate Chainlink VRF** [DONE]
 
   As a player,
   I want winner selection to use provably fair and tamper-proof randomness,
@@ -125,7 +125,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the VRF request times out, when checked, then the contract maintains its current state until retry
   - Given the random number is received, when winner selection occurs, then it uses randomResult % participants.length
 
-- **US-006: Automated Draw Scheduling**
+- **US-006: Automated Draw Scheduling** [DONE]
 
   As a player,
   I want lottery draws to be triggered automatically at scheduled intervals,
@@ -138,7 +138,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the automation subscription lacks funds, when upkeep is needed, then the system pauses until refunded
   - Given the upkeep is performed, when it completes, then the next interval timer resets automatically
 
-- **US-007: Immutable Lottery Configuration**
+- **US-007: Immutable Lottery Configuration** [DONE]
 
   As a player,
   I want the lottery rules to be permanently fixed after deployment,
@@ -152,7 +152,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given I want different rules, when I need changes, then I must deploy a completely new contract instance
   - Given the contract is verified, when I check on Etherscan, then the immutable nature of parameters is visible in the code
 
-- **US-008: Enhanced Security Protection**
+- **US-008: Enhanced Security Protection** [DONE]
 
   As a player,
   I want my entry fees and winnings protected against theft and vulnerabilities,
@@ -167,7 +167,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given ownership functions exist, when called, then only the designated owner can execute them
   - Given the contract handles ETH, when transferring funds, then it uses secure transfer methods with proper error handling
 
-- **US-009: Comprehensive Event Logging**
+- **US-009: Comprehensive Event Logging** [DONE]
 
   As a lottery operator,
   I want to track all lottery activities through detailed event logs,
@@ -182,7 +182,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given I filter events, when I query by indexed parameters, then I can efficiently search by player address, winner, or round number
   - Given I check event history, when I query the blockchain, then all lottery activities are permanently logged and auditable
 
-- **US-010: Secure Winner Withdrawal Pattern**
+- **US-010: Secure Winner Withdrawal Pattern** [DONE]
 
   As a lottery winner,
   I want to securely withdraw my prize using a pull payment pattern,
@@ -198,7 +198,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the transfer fails during withdrawal, when I retry, then I can attempt withdrawal again without losing my prize
   - Given multiple winners across rounds, when they withdraw, then each receives only their designated prize amount
 
-- **US-011: Deploy to Public Test Network**
+- **US-011: Deploy to Public Test Network** [DONE]
 
   As a lottery operator,
   I want to deploy the Raffle contract to a public test network,
@@ -219,7 +219,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
 ### Frontend User Stories
 
-- **US-012: View Round Information**
+- **US-012: View Round Information** [READY]
 
   As a player,
   I want to see current round information (entrance fee, prize pool, time until drawing),
@@ -233,7 +233,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the entry window is active, when I view the page, then I see the time remaining until drawing
   - Given the blockchain state changes, when a new player enters, then the displayed data refreshes automatically
 
-- **US-013: Connect Wallet**
+- **US-013: Connect Wallet** [DONE]
 
   As a player,
   I want to connect my Ethereum wallet,
@@ -247,7 +247,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given my wallet is connected, when I view the header, then I see my ETH balance
   - Given my wallet is connected, when I click my address, then I can disconnect my wallet
 
-- **US-014: Enter Raffle**
+- **US-014: Enter Raffle** [READY]
 
   As a player,
   I want to pay the entrance fee to join the current round,
@@ -263,7 +263,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given I already entered this round, when I click "Enter Raffle" again, then I am added as a separate entry (increasing my chances)
   - Given the transaction fails, when the error occurs, then I see a clear error message
 
-- **US-015: View My Entries**
+- **US-015: View My Entries** [READY]
 
   As a player who entered the raffle,
   I want to see my entries in the current round,
@@ -276,7 +276,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given another player enters, when the data refreshes, then the players list updates in real-time
   - Given I view the players list, when looking at other players, then their addresses are displayed truncated
 
-- **US-016: View Drawing Result**
+- **US-016: View Drawing Result** [READY]
 
   As a player,
   I want to see who won when a drawing completes,
@@ -290,7 +290,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given no players entered the round, when the round completes, then I see "No winner - round reset"
   - Given I want to see past rounds, when I view round history, then I see previous winners and prize amounts
 
-- **US-017: Claim Prize**
+- **US-017: Claim Prize** [READY]
 
   As a winner,
   I want to claim my prize,
@@ -305,7 +305,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the claim succeeds, when the transaction confirms, then my wallet balance updates
   - Given I have no unclaimed prizes, when I view the page, then the "Claim Prize" button is not visible
 
-- **US-018: Wheel of Fortune Visualization**
+- **US-018: Wheel of Fortune Visualization** [READY]
 
   As a player,
   I want to see players displayed as a spinning wheel during the drawing,

@@ -1,252 +1,165 @@
-# Plan implementacji US-012: View Round Information
+# Incremental Delivery Plan: US-012 - View Round Information
 
-## Kontekst
+## User Story
 
-**Issue #35:** US-012 - View Round Information
-**Branch:** `feature/issue-35-frontend-initialization`
+**US-012: View Round Information**
 
-## Acceptance Criteria (AC)
+As a player,
+I want to see current round information (entrance fee, prize pool, time until drawing),
+So that I can decide whether to enter the raffle.
 
-- **AC1:** Entrance fee displayed in ETH (page load)
-- **AC2:** Prize pool displayed (accumulated entrance fees)
-- **AC3:** Number of players in current round
-- **AC4:** Time remaining until drawing (countdown)
-- **AC5:** Data refreshes automatically when new player enters
+## Acceptance Criteria Analysis
 
-## Architektura danych
+| AC | Description | Data Source | Complexity |
+|----|-------------|-------------|------------|
+| AC1 | Entrance fee displayed in ETH | Contract (immutable - `getEntranceFee()`) | Simple |
+| AC2 | Prize pool displayed (accumulated fees) | Contract (needs getter) or Indexer | Medium |
+| AC3 | Number of players in current round | Contract (needs getter) or Indexer | Medium |
+| AC4 | Time remaining until drawing | Contract (`lastTimeStamp`, `INTERVAL`) | Medium |
+| AC5 | Data refreshes automatically on new entries | Wagmi polling or Indexer subscription | Medium |
 
-| Dane | Źródło | Uzasadnienie |
-|------|--------|--------------|
-| Entrance Fee | Kontrakt (cache) | Immutable → cache w localStorage |
-| Interval | Kontrakt (cache) | Immutable → cache w localStorage |
-| Prize Pool | Ponder | Agregacja, real-time |
-| Liczba graczy | Ponder | Count, real-time |
-| Last Timestamp | Ponder | Dynamiczne, real-time |
+## Sorting by Complexity (simplest to most complex)
 
----
+1. **AC1** - Entrance fee is already available via `getEntranceFee()` - just needs frontend display
+2. **AC4** - Time remaining requires reading two contract values and computing countdown
+3. **AC2 + AC3** - Prize pool and player count require adding getter functions to contract OR using indexer
+4. **AC5** - Auto-refresh builds on top of all previous ACs
 
-## Sesje robocze
+## Implementation Path Decision
 
-### ✅ Sesja 1: Inicjalizacja projektów - UKOŃCZONA
+**Key Decision:** Data source for AC2, AC3, and AC5
 
-**Cel:** Struktura monorepo z frontend i indexer
+**Option A: Direct Contract Reads (wagmi hooks)**
+- Pros: Simpler, no indexer setup needed
+- Cons: Requires adding getter functions to contract, less efficient for complex queries
 
-**Spełnia AC:** Podstawa infrastruktury dla wszystkich AC
+**Option B: Indexer (Ponder)**
+- Pros: More efficient for real-time updates, better for future features (history, analytics)
+- Cons: More infrastructure to set up initially
 
-**Status:** 6 commitów (72bebb7 → e208fb6)
-
----
-
-### Sesja 2: Ponder Schema + Anvil Config
-
-**Cel:** Ponder działa lokalnie z Anvil
-
-**Spełnia AC:**
-- **AC2** (prize pool) - Round entity z prizePool
-- **AC3** (liczba graczy) - Entry entity, playerCount w Round
-- **AC4** (countdown) - lastTimeStamp w Round
-- **AC5** (auto-refresh) - podstawa dla SSE
-
-**Zadania:**
-1. Skopiować ABI z `out/Raffle.sol/Raffle.json` do `indexer/abis/`
-2. Skonfigurować `ponder.config.ts` dla Anvil (chain 31337, disableCache: true)
-3. Zdefiniować schema w `ponder.schema.ts`:
-   - `Round` - roundNumber, status, prizePool, playerCount, lastTimeStamp, winner
-   - `Entry` - id, roundNumber, player, timestamp
-4. Wygenerować typy: `pnpm ponder codegen`
-
-**Pliki:**
-- `indexer/abis/RaffleAbi.ts`
-- `indexer/ponder.config.ts`
-- `indexer/ponder.schema.ts`
-
-**Kryterium ukończenia:**
-- `pnpm dev` startuje bez błędów
+**Recommended:** Option A (Direct Contract Reads) for simplicity, with auto-refresh via wagmi polling. The indexer can be enhanced later for US-016 (View Drawing Result) which needs historical data.
 
 ---
 
-### Sesja 3: Ponder Event Handlers
+## Stage 1: Display Entrance Fee
 
-**Cel:** Indeksowanie eventów Raffle
+**Goal:** User sees the entrance fee when visiting the raffle page.
 
-**Spełnia AC:**
-- **AC2** (prize pool) - handler aktualizuje prizePool przy RaffleEntered
-- **AC3** (liczba graczy) - handler zwiększa playerCount
-- **AC4** (countdown) - handler ustawia lastTimeStamp
-- **AC5** (auto-refresh) - eventy triggerują aktualizację
+**AC:** Given I visit the raffle website, when the page loads, then I see the entrance fee displayed in ETH
 
-**Zadania:**
-1. Zaimplementować handlery w `src/index.ts`:
-   - `Raffle:RaffleEntered` - utwórz/aktualizuj Round, utwórz Entry
-   - `Raffle:DrawCompleted` - zamknij Round, ustaw winner
-2. Logika:
-   - Na RaffleEntered: prizePool += entranceFee, playerCount++
-   - Na DrawCompleted: status = "completed", winner = event.winner
+**What we are building:**
+- A raffle information panel that displays the entrance fee
+- The entrance fee is read directly from the deployed contract
+- Value is formatted and displayed in ETH (not wei)
 
-**Pliki:**
-- `indexer/src/index.ts`
+**Dependencies on previous stages:**
+- None
 
-**Kryterium ukończenia:**
-- Deploy kontrakt na Anvil, wykonaj enterRaffle, sprawdź czy Ponder indeksuje
+**Definition of Done:**
+- User visits the raffle page and sees "Entrance Fee: 0.01 ETH" (or configured amount)
+- The value is read from the actual deployed contract
+- Works on both Sepolia and local Anvil networks
 
 ---
 
-### Sesja 4: Contract Read (Frontend)
+## Stage 2: Display Time Remaining
 
-**Cel:** Odczyt immutable z kontraktu + cache
+**Goal:** User sees how much time is left before the drawing occurs.
 
-**Spełnia AC:**
-- **AC1** (entrance fee) - `getEntranceFee()` z kontraktu
-- **AC4** (countdown) - `getInterval()` z kontraktu (potrzebny getter!)
+**AC:** Given the entry window is active, when I view the page, then I see the time remaining until drawing
 
-**Zadania:**
-1. Dodać `getInterval()` getter do kontraktu Raffle.sol
-2. Skopiować ABI do `frontend/src/constants/`
-3. Zainstalować viem
-4. Utworzyć `useContractConfig()` hook:
-   - Odczyt entranceFee i interval przy mount
-   - Cache w localStorage
-   - Zwraca cached values
+**What we are building:**
+- A countdown timer showing time until the entry window closes
+- Timer updates in real-time (every second)
+- When time reaches zero, display changes to indicate drawing is imminent
 
-**Pliki:**
-- `src/Raffle.sol` - dodać `getInterval()`
-- `frontend/src/constants/contracts.ts`
-- `frontend/src/hooks/useContractConfig.ts`
+**Dependencies on previous stages:**
+- Stage 1 (raffle info panel exists)
 
-**Kryterium ukończenia:**
-- Hook zwraca entranceFee i interval
-- Wartości cached w localStorage
+**Definition of Done:**
+- User sees countdown timer (e.g., "Time until drawing: 5:32")
+- Timer counts down every second
+- When entry window is closed, user sees "Drawing in progress..." or similar
+- Smart contract needs getter functions for `lastTimeStamp` and `interval`
 
 ---
 
-### Sesja 5: Ponder Integration (Frontend)
+## Stage 3: Display Prize Pool and Player Count
 
-**Cel:** Live data z Ponder indexera
+**Goal:** User sees the current prize pool and number of participants.
 
-**Spełnia AC:**
-- **AC2** (prize pool) - query z Ponder
-- **AC3** (liczba graczy) - query z Ponder
-- **AC4** (countdown) - lastTimeStamp z Ponder
-- **AC5** (auto-refresh) - SSE subscriptions
+**AC:**
+- Given the current round has players, when I view the page, then I see the prize pool (accumulated entrance fees)
+- Given the current round is open, when I view the page, then I see the number of players in the current round
 
-**Zadania:**
-1. Zainstalować @ponder/react, @tanstack/react-query
-2. Skonfigurować PonderProvider
-3. Utworzyć `useCurrentRound()` hook:
-   - Query: current round (status = "open")
-   - Returns: prizePool, playerCount, lastTimeStamp
-   - Live subscription (SSE)
+**What we are building:**
+- Display of current prize pool in ETH
+- Display of player count in current round
+- Both values read from the smart contract via new getter functions
 
-**Pliki:**
-- `frontend/src/lib/ponder.ts`
-- `frontend/src/hooks/useCurrentRound.ts`
+**Dependencies on previous stages:**
+- Stage 1 and Stage 2 (raffle info panel exists with entrance fee and timer)
 
-**Kryterium ukończenia:**
-- Hook zwraca live data z Ponder
-- Dane odświeżają się przy nowym wpisie
+**Definition of Done:**
+- User sees "Prize Pool: 0.05 ETH" (sum of all entries)
+- User sees "Players: 5" (number of entries in current round)
+- Values reflect actual contract state
+- Smart contract needs getter functions for `prizePool` and `players.length`
 
 ---
 
-### Sesja 6: Round Info Panel (UI)
+## Stage 4: Auto-Refresh on Blockchain Changes
 
-**Cel:** Wyświetlanie informacji o rundzie
+**Goal:** Displayed data updates automatically when new players enter.
 
-**Spełnia AC:**
-- **AC1** (entrance fee) - wyświetla z useContractConfig
-- **AC2** (prize pool) - wyświetla z useCurrentRound
-- **AC3** (liczba graczy) - wyświetla z useCurrentRound
-- **AC4** (countdown) - komponent Countdown
+**AC:** Given the blockchain state changes, when a new player enters, then the displayed data refreshes automatically
 
-**Zadania:**
-1. Utworzyć `RoundInfoPanel` z shadcn/ui Card:
-   - Entrance fee (ETH) - z useContractConfig
-   - Prize pool (ETH) - z useCurrentRound
-   - Players count - z useCurrentRound
-   - Time remaining - Countdown component
-2. Utworzyć `Countdown` component:
-   - Props: lastTimeStamp, interval
-   - Kalkulacja: interval - (now - lastTimeStamp)
-   - Auto-update co sekundę
+**What we are building:**
+- Automatic polling of contract data at regular intervals
+- Optionally: event-based updates when RaffleEntered events are detected
+- UI updates without manual page refresh
 
-**Pliki:**
-- `frontend/src/components/RoundInfoPanel.tsx`
-- `frontend/src/components/Countdown.tsx`
+**Dependencies on previous stages:**
+- Stage 3 (all data is already being displayed)
 
-**Kryterium ukończenia:**
-- Panel wyświetla wszystkie 4 wartości
-- Countdown tyka co sekundę
-- Dane odświeżają się automatycznie
+**Definition of Done:**
+- When another user enters the raffle, the prize pool and player count update within a few seconds
+- No manual page refresh required
+- Countdown timer continues to work correctly during updates
 
 ---
 
-### Sesja 7: Local Testing (Full Stack)
+## Summary Table
 
-**Cel:** E2E test na Anvil
+| Stage | AC | Goal | Dependencies |
+|-------|-----|------|--------------|
+| 1 | AC1 | Display entrance fee in ETH | - |
+| 2 | AC4 | Display countdown timer to drawing | Stage 1 |
+| 3 | AC2, AC3 | Display prize pool and player count | Stage 2 |
+| 4 | AC5 | Auto-refresh data on blockchain changes | Stage 3 |
 
-**Spełnia AC:** Weryfikacja wszystkich AC
-
-**Zadania:**
-1. Test lokalny end-to-end:
-   - Terminal 1: `anvil`
-   - Terminal 2: `forge script script/DeployRaffle.s.sol --broadcast --rpc-url http://localhost:8545`
-   - Terminal 3: `cd indexer && pnpm dev`
-   - Terminal 4: `cd frontend && pnpm dev`
-2. Scenariusze testowe:
-   - **AC1:** Strona ładuje się, entrance fee widoczny
-   - **AC2:** Po enterRaffle, prize pool się aktualizuje
-   - **AC3:** Po enterRaffle, player count rośnie
-   - **AC4:** Countdown tyka, pokazuje poprawny czas
-   - **AC5:** Drugi gracz wchodzi → UI odświeża się automatycznie
-3. Dodać `make dev-local` do Makefile
-
-**Kryterium ukończenia:**
-- Wszystkie AC zweryfikowane manualnie
-- Dokumentacja testu w PR
+**Implementation path:** AC1 -> AC4 -> AC2 + AC3 -> AC5
 
 ---
 
-## Kolejność sesji
+## Smart Contract Changes Required
 
-```
-✅ Sesja 1 (done)
-      │
-      ├──► Sesja 2 (Ponder Schema)     → AC2, AC3, AC4, AC5
-      │         │
-      │         ▼
-      │    Sesja 3 (Ponder Handlers)   → AC2, AC3, AC4, AC5
-      │         │
-      │         ▼
-      │    Sesja 5 (Ponder Frontend)   → AC2, AC3, AC4, AC5
-      │         │
-      └──► Sesja 4 (Contract Read)     → AC1, AC4
-                │
-                ▼
-           Sesja 6 (UI Panel)          → AC1, AC2, AC3, AC4
-                │
-                ▼
-           Sesja 7 (Testing)           → Weryfikacja wszystkich AC
-```
+The current `Raffle.sol` only exposes `getEntranceFee()`. The following getter functions need to be added:
 
-**Ścieżka krytyczna:** 1 → 2 → 3 → 5 → 6 → 7
+1. `getInterval()` - returns the draw interval (needed for Stage 2)
+2. `getLastTimeStamp()` - returns the last timestamp (needed for Stage 2)
+3. `getPrizePool()` - returns the current prize pool (needed for Stage 3)
+4. `getPlayersCount()` - returns the number of players (needed for Stage 3)
+5. `getRoundNumber()` - returns the current round number (useful context)
+6. `getRaffleState()` - returns whether raffle is OPEN or DRAWING (needed for Stage 2)
 
-**Równoległa:** Sesja 4 może być robiona równolegle z 2-3
+These are simple view functions with no security implications.
 
 ---
 
-## Weryfikacja końcowa (Sesja 7)
+## Notes
 
-| AC | Test | Expected |
-|----|------|----------|
-| AC1 | Załaduj stronę | Entrance fee: 0.01 ETH |
-| AC2 | Po 2x enterRaffle | Prize pool: 0.02 ETH |
-| AC3 | Po 2x enterRaffle | Players: 2 |
-| AC4 | Odczekaj 10s | Countdown zmniejsza się |
-| AC5 | Drugi terminal: enterRaffle | UI odświeża się <1s |
-
----
-
-## Usunięte z planu (nie dotyczą US-012)
-
-- ~~Sesja 2: Wallet Integration~~ → US-013: Connect Wallet
-- ~~useEnterRaffle()~~ → US-014: Enter Raffle
-- ~~useClaimPrize()~~ → US-017: Claim Prize
+- This plan focuses on WHAT the user sees, not HOW it is implemented technically
+- Technical decisions (specific hooks, component structure, styling) will be made during implementation
+- The smart contract changes are minimal additions of view functions
+- Future stories (US-015, US-016) will build on this foundation
