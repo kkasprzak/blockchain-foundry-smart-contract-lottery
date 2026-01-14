@@ -121,3 +121,58 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Vegas Casino Animations */
+@keyframes fall {
+  0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+.animate-fall {
+  animation: fall linear infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 60px rgba(251, 191, 36, 1), 0 0 120px rgba(251, 191, 36, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 100px rgba(251, 191, 36, 1), 0 0 180px rgba(251, 191, 36, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes flash {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 120px rgba(251, 191, 36, 1);
+    filter: brightness(1.3);
+    transform: scale(1.05);
+  }
+  50% {
+    opacity: 0.2;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+    filter: brightness(0.6);
+    transform: scale(1);
+  }
+}
+
+.animate-flash {
+  animation: flash 0.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
