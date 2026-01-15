@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Trophy, Users, Clock, Sparkles, Coins, Gift } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
+import { useEntranceFee } from "@/hooks/useEntranceFee"
 
 export function RafflePage() {
   const { isConnected } = useAccount()
+  const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
   const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 45, seconds: 30 })
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
@@ -219,7 +221,7 @@ export function RafflePage() {
               <CardContent className="relative z-10 flex flex-col gap-6">
                 <div>
                   <div className="text-4xl font-black text-emerald-300 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]">
-                    0.01 ETH
+                    {isLoadingFee ? "Loading..." : entranceFee ? `${entranceFee} ETH` : "0.01 ETH"}
                   </div>
                   <p className="text-sm text-purple-300 font-bold">Per ticket</p>
                 </div>
