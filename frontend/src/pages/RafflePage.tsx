@@ -175,19 +175,19 @@ export function RafflePage() {
               <CardContent className="relative z-10">
                 <div className="flex items-center justify-center gap-2">
                   <div className="text-center bg-gradient-to-br from-pink-600 to-purple-700 rounded-xl p-3 border-3 border-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.6)]">
-                    <div className="text-4xl font-black text-amber-200">{String(timeLeft.hours).padStart(2, "0")}</div>
+                    <div className="text-4xl font-black text-amber-200 tabular-nums">{String(timeLeft.hours).padStart(2, "0")}</div>
                     <div className="text-xs text-pink-200 font-black">HRS</div>
                   </div>
                   <div className="text-3xl font-black text-amber-300 animate-pulse">:</div>
                   <div className="text-center bg-gradient-to-br from-pink-600 to-purple-700 rounded-xl p-3 border-3 border-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.6)]">
-                    <div className="text-4xl font-black text-amber-200">
+                    <div className="text-4xl font-black text-amber-200 tabular-nums">
                       {String(timeLeft.minutes).padStart(2, "0")}
                     </div>
                     <div className="text-xs text-pink-200 font-black">MIN</div>
                   </div>
                   <div className="text-3xl font-black text-amber-300 animate-pulse">:</div>
                   <div className="text-center bg-gradient-to-br from-pink-600 to-purple-700 rounded-xl p-3 border-3 border-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.6)]">
-                    <div className="text-4xl font-black text-amber-200">
+                    <div className="text-4xl font-black text-amber-200 tabular-nums">
                       {String(timeLeft.seconds).padStart(2, "0")}
                     </div>
                     <div className="text-xs text-pink-200 font-black">SEC</div>
