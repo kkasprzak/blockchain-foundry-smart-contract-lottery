@@ -13,7 +13,7 @@ import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 export function RafflePage() {
   const { isConnected } = useAccount()
   const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
-  const { timeLeft } = useRaffleTimeRemaining()
+  const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
@@ -232,7 +232,16 @@ export function RafflePage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.1),transparent_70%)]"></div>
               <CardContent className="p-8 relative z-10 h-full flex flex-col justify-center">
                 <div className="flex flex-col items-center justify-center">
-                  <WheelPlaceholder />
+                  {!isLoadingTime && isEntryWindowClosed ? (
+                    <div className="text-center">
+                      <div className="text-5xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse">
+                        DRAWING IN PROGRESS...
+                      </div>
+                      <p className="text-pink-300 font-bold mt-4 text-xl">Please wait for winner selection</p>
+                    </div>
+                  ) : (
+                    <WheelPlaceholder />
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useReadContract } from "wagmi";
 import { RAFFLE_ABI, RAFFLE_ADDRESS } from "@/config/contracts";
 
@@ -9,7 +9,7 @@ interface TimeRemaining {
 }
 
 export function useRaffleTimeRemaining() {
-  const { data: deadline } = useReadContract({
+  const { data: deadline, isLoading } = useReadContract({
     address: RAFFLE_ADDRESS,
     abi: RAFFLE_ABI,
     functionName: "getEntryDeadline",
@@ -24,7 +24,7 @@ export function useRaffleTimeRemaining() {
   useEffect(() => {
     if (!deadline) return;
 
-    const timer = setInterval(() => {
+    const updateTime = () => {
       const nowInSeconds = Math.floor(Date.now() / 1000);
       const remainingSeconds = Number(deadline) - nowInSeconds;
 
@@ -37,16 +37,29 @@ export function useRaffleTimeRemaining() {
           seconds: remainingSeconds % 60,
         });
       }
-    }, 1000);
+    };
+
+    // Calculate initial time immediately
+    updateTime();
+
+    const timer = setInterval(updateTime, 1000);
 
     return () => clearInterval(timer);
   }, [deadline]);
 
-  const isEntryWindowClosed =
-    timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
+  const isEntryWindowClosed = useMemo(
+    () =>
+      !isLoading &&
+      deadline !== undefined &&
+      timeLeft.hours === 0 &&
+      timeLeft.minutes === 0 &&
+      timeLeft.seconds === 0,
+    [isLoading, deadline, timeLeft]
+  );
 
   return {
     timeLeft,
     isEntryWindowClosed,
+    isLoading,
   };
 }
