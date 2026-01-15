@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -8,31 +8,15 @@ import { Separator } from "@/components/ui/separator"
 import { Trophy, Users, Clock, Sparkles, Coins, Gift } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
+import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 
 export function RafflePage() {
   const { isConnected } = useAccount()
   const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
-  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 45, seconds: 30 })
+  const { timeLeft } = useRaffleTimeRemaining()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 }
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 }
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 }
-        }
-        return prev
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [])
 
   const handleEnterRaffle = () => {
     console.log("Player added to raffle pool")
