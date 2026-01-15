@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -7,30 +7,16 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Trophy, Users, Clock, Sparkles, Coins, Gift } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
+import { useEntranceFee } from "@/hooks/useEntranceFee"
+import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 
 export function RafflePage() {
   const { isConnected } = useAccount()
-  const [timeLeft, setTimeLeft] = useState({ hours: 23, minutes: 45, seconds: 30 })
+  const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
+  const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 }
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 }
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 }
-        }
-        return prev
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [])
 
   const handleEnterRaffle = () => {
     console.log("Player added to raffle pool")
@@ -189,25 +175,24 @@ export function RafflePage() {
               <CardContent className="relative z-10">
                 <div className="flex items-center justify-center gap-2">
                   <div className="text-center bg-gradient-to-br from-pink-600 to-purple-700 rounded-xl p-3 border-3 border-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.6)]">
-                    <div className="text-4xl font-black text-amber-200">{String(timeLeft.hours).padStart(2, "0")}</div>
+                    <div className="text-4xl font-black text-amber-200 tabular-nums">{String(timeLeft.hours).padStart(2, "0")}</div>
                     <div className="text-xs text-pink-200 font-black">HRS</div>
                   </div>
                   <div className="text-3xl font-black text-amber-300 animate-pulse">:</div>
                   <div className="text-center bg-gradient-to-br from-pink-600 to-purple-700 rounded-xl p-3 border-3 border-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.6)]">
-                    <div className="text-4xl font-black text-amber-200">
+                    <div className="text-4xl font-black text-amber-200 tabular-nums">
                       {String(timeLeft.minutes).padStart(2, "0")}
                     </div>
                     <div className="text-xs text-pink-200 font-black">MIN</div>
                   </div>
                   <div className="text-3xl font-black text-amber-300 animate-pulse">:</div>
                   <div className="text-center bg-gradient-to-br from-pink-600 to-purple-700 rounded-xl p-3 border-3 border-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.6)]">
-                    <div className="text-4xl font-black text-amber-200">
+                    <div className="text-4xl font-black text-amber-200 tabular-nums">
                       {String(timeLeft.seconds).padStart(2, "0")}
                     </div>
                     <div className="text-xs text-pink-200 font-black">SEC</div>
                   </div>
                 </div>
-                <p className="text-xs text-pink-200 font-bold mt-3 text-center animate-pulse">DRAW STARTS AT 00:00</p>
               </CardContent>
             </Card>
 
@@ -219,7 +204,7 @@ export function RafflePage() {
               <CardContent className="relative z-10 flex flex-col gap-6">
                 <div>
                   <div className="text-4xl font-black text-emerald-300 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]">
-                    0.01 ETH
+                    {isLoadingFee ? "Loading..." : entranceFee ? `${entranceFee} ETH` : "0.01 ETH"}
                   </div>
                   <p className="text-sm text-purple-300 font-bold">Per ticket</p>
                 </div>
@@ -247,7 +232,16 @@ export function RafflePage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.1),transparent_70%)]"></div>
               <CardContent className="p-8 relative z-10 h-full flex flex-col justify-center">
                 <div className="flex flex-col items-center justify-center">
-                  <WheelPlaceholder />
+                  {!isLoadingTime && isEntryWindowClosed ? (
+                    <div className="text-center">
+                      <div className="text-5xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse">
+                        DRAWING IN PROGRESS...
+                      </div>
+                      <p className="text-pink-300 font-bold mt-4 text-xl">Please wait for winner selection</p>
+                    </div>
+                  ) : (
+                    <WheelPlaceholder />
+                  )}
                 </div>
               </CardContent>
             </Card>

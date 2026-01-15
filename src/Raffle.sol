@@ -174,6 +174,12 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         return ENTRANCE_FEE;
     }
 
+    /// @notice Returns the timestamp when the current entry window closes
+    /// @return The Unix timestamp (in seconds) when entries will no longer be accepted
+    function getEntryDeadline() external view returns (uint256) {
+        return lastTimeStamp + INTERVAL;
+    }
+
     /// @notice Checks if the raffle is ready for a draw
     /// @return upkeepNeeded True if the entry window is closed and raffle is open
     /// @return performData Empty bytes (not used)

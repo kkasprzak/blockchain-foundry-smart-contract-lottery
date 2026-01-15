@@ -611,6 +611,16 @@ contract RaffleTest is Test {
         _assertEntryWindowIsClosed(raffle);
     }
 
+    function testGetEntryDeadline() public {
+        uint256 interval = 3600;
+        Raffle raffle = _createRaffleWithInterval(interval);
+
+        uint256 expectedDeadline = block.timestamp + interval;
+        uint256 actualDeadline = raffle.getEntryDeadline();
+
+        assertEq(actualDeadline, expectedDeadline);
+    }
+
     function _createValidRaffle() private returns (Raffle) {
         return _createRaffleWithEntranceFeeAndInterval(1 ether, 1);
     }
