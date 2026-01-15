@@ -193,7 +193,6 @@ export function RafflePage() {
                     <div className="text-xs text-pink-200 font-black">SEC</div>
                   </div>
                 </div>
-                <p className="text-xs text-pink-200 font-bold mt-3 text-center animate-pulse">DRAW STARTS AT 00:00</p>
               </CardContent>
             </Card>
 
