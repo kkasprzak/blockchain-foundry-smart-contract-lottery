@@ -43,6 +43,9 @@ help:
 	@echo "  indexer-dev            Start indexer development server"
 	@echo "  indexer-codegen        Generate Ponder types from config"
 	@echo ""
+	@echo "Local Contract Interaction:"
+	@echo "  perform-upkeep         Trigger raffle draw on local Anvil"
+	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make test                         # Quick testing during development"
 	@echo "  make slither                      # Run security analysis"
@@ -140,3 +143,10 @@ indexer-dev:
 
 indexer-codegen:
 	cd indexer && pnpm codegen
+
+# Local contract interaction
+perform-upkeep:
+	@echo "Performing upkeep on local Raffle contract..."
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	echo "Using Raffle at: $$RAFFLE_ADDR"; \
+	cast send $$RAFFLE_ADDR "performUpkeep(bytes)" "0x" --rpc-url local --account localKey
