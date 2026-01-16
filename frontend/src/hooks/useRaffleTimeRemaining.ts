@@ -15,6 +15,8 @@ export function useRaffleTimeRemaining() {
     functionName: "getEntryDeadline",
   });
 
+  const [hasCalculated, setHasCalculated] = useState(false);
+
   const [timeLeft, setTimeLeft] = useState<TimeRemaining>({
     hours: 0,
     minutes: 0,
@@ -37,6 +39,7 @@ export function useRaffleTimeRemaining() {
           seconds: remainingSeconds % 60,
         });
       }
+      setHasCalculated(true);
     };
 
     // Calculate initial time immediately
@@ -50,11 +53,12 @@ export function useRaffleTimeRemaining() {
   const isEntryWindowClosed = useMemo(
     () =>
       !isLoading &&
+      hasCalculated &&
       deadline !== undefined &&
       timeLeft.hours === 0 &&
       timeLeft.minutes === 0 &&
       timeLeft.seconds === 0,
-    [isLoading, deadline, timeLeft]
+    [isLoading, hasCalculated, deadline, timeLeft]
   );
 
   return {
