@@ -32,4 +32,21 @@ export const RAFFLE_ABI = [
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
+  {
+    type: "event",
+    name: "RaffleEntered",
+    inputs: [
+      { name: "roundNumber", type: "uint256", indexed: true, internalType: "uint256" },
+      { name: "player", type: "address", indexed: true, internalType: "address" },
+    ],
+  },
+  {
+    type: "event",
+    name: "DrawCompleted",
+    inputs: [
+      { name: "roundNumber", type: "uint256", indexed: true, internalType: "uint256" },
+      { name: "winner", type: "address", indexed: true, internalType: "address" },
+      { name: "prize", type: "uint256", indexed: false, internalType: "uint256" },
+    ],
+  },
 ] as const;

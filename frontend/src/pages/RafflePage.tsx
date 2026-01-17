@@ -11,16 +11,28 @@ import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 import { usePrizePool } from "@/hooks/usePrizePool"
 import { usePlayersCount } from "@/hooks/usePlayersCount"
+import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 
 export function RafflePage() {
   const { isConnected } = useAccount()
   const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
-  const { prizePool, isLoading: isLoadingPrizePool } = usePrizePool()
-  const { playersCount, isLoading: isLoadingPlayers } = usePlayersCount()
+  const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
+  const { playersCount, isLoading: isLoadingPlayers, refetch: refetchPlayers } = usePlayersCount()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
+
+  useWatchRaffleEvents({
+    onRaffleEntered: () => {
+      refetchPrizePool()
+      refetchPlayers()
+    },
+    onDrawCompleted: () => {
+      refetchPrizePool()
+      refetchPlayers()
+    },
+  })
 
   const handleEnterRaffle = () => {
     console.log("Player added to raffle pool")
