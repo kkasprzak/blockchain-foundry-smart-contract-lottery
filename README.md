@@ -127,8 +127,9 @@ This project supports deployment to multiple environments, each optimized for di
 2. **Import one of Anvil's accounts into keystore:**
    ```bash
    cast wallet import localKey --interactive
-   # When prompted, use any private key from the Anvil output above
-   # Set a password for encryption
+   # When prompted, use the first private key from the Anvil output above
+   # When prompted for password, press Enter (leave empty) for local dev
+   # Empty password allows Makefile commands to work without prompts
    ```
 
 ### Deployment
@@ -149,6 +150,67 @@ This project supports deployment to multiple environments, each optimized for di
 - No gas costs
 - State resets when Anvil restarts
 - Rich debugging information
+
+### Local Development Workflow
+
+Once you have Anvil running and the contract deployed, use these Makefile commands to interact with the raffle:
+
+#### Simulating Players Entering Raffle
+
+```bash
+# Single player enters
+make enter-player-1   # Player 1 enters with 0.01 ETH
+make enter-player-2   # Player 2 enters with 0.01 ETH
+# ... up to player 5
+
+# All 5 players enter at once
+make enter-5-players
+```
+
+**Note:** Player keys are configured in `.env` (copy from `.env.example` and fill with Anvil keys)
+
+#### Completing a Draw Cycle
+
+After players have entered and the entry window has closed:
+
+```bash
+make complete-draw
+```
+
+This command:
+1. Calls `performUpkeep()` on the Raffle contract
+2. Triggers VRF callback on the mock coordinator
+3. Completes the draw, selects winner, and starts new round
+
+#### Full Testing Scenario Example
+
+```bash
+# 1. Deploy contract
+make deploy-local
+
+# 2. Add 5 players to raffle
+make enter-5-players
+# Prize Pool: 0.05 ETH, Players: 5
+
+# 3. Wait for entry window to close (or fast-forward time)
+# Default interval: 300 seconds (5 minutes)
+
+# 4. Complete the draw
+make complete-draw
+# Winner selected, prize transferred, new round started
+
+# 5. Verify reset
+# Prize Pool: 0 ETH, Players: 0
+```
+
+#### Frontend Testing
+
+1. Start frontend: `cd frontend && pnpm dev`
+2. Open `http://localhost:5173`
+3. Use Makefile commands to simulate activity
+4. Refresh page (F5) to see updated values
+
+**Current limitation:** UI requires manual refresh (auto-refresh coming in future issue)
 
 ## Available Scripts
 

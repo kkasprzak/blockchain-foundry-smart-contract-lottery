@@ -1,7 +1,10 @@
+-include .env
+
 .PHONY: help install build test clean deploy-sepolia deploy-local slither lint
 .PHONY: create-subscription fund-subscription add-consumer subscription-status
 .PHONY: register-upkeep fund-upkeep upkeep-status
 .PHONY: frontend-dev frontend-build indexer-dev indexer-codegen
+.PHONY: enter-player-1 enter-player-2 enter-player-3 enter-player-4 enter-player-5 enter-5-players complete-draw
 
 # Default target - show help when no target specified
 help:
@@ -43,6 +46,15 @@ help:
 	@echo "  indexer-dev            Start indexer development server"
 	@echo "  indexer-codegen        Generate Ponder types from config"
 	@echo ""
+	@echo "Local Contract Interaction:"
+	@echo "  enter-player-1         Player 1 enters raffle (0.01 ETH)"
+	@echo "  enter-player-2         Player 2 enters raffle (0.01 ETH)"
+	@echo "  enter-player-3         Player 3 enters raffle (0.01 ETH)"
+	@echo "  enter-player-4         Player 4 enters raffle (0.01 ETH)"
+	@echo "  enter-player-5         Player 5 enters raffle (0.01 ETH)"
+	@echo "  enter-5-players        All 5 players enter raffle"
+	@echo "  complete-draw          Complete raffle draw (performUpkeep + VRF callback)"
+	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make test                         # Quick testing during development"
 	@echo "  make slither                      # Run security analysis"
@@ -75,7 +87,7 @@ deploy-sepolia:
 deploy-local:
 	@echo "Deploying Raffle to local network..."
 	@cast rpc anvil_mine 20 --rpc-url local > /dev/null 2>&1 || true
-	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url local --broadcast --account localKey -vvvv
+	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url local --broadcast --account localKey --password ""
 
 # Run Slither static analysis
 slither:
@@ -122,6 +134,52 @@ fund-upkeep:
 	@echo "This will transfer 2 LINK (default) from your wallet to the upkeep."
 	@echo "Configure UPKEEP_FUND_AMOUNT in .env to change the amount."
 	@forge script script/FundUpkeep.s.sol --rpc-url sepolia --broadcast --account sepoliaKey
+
+# Local contract interaction
+
+enter-player-1:
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	echo "Player 1 entering raffle..."; \
+	cast send $$RAFFLE_ADDR "enterRaffle()" --value 0.01ether --rpc-url local --private-key ${ANVIL_PLAYER_1_KEY}
+
+enter-player-2:
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	echo "Player 2 entering raffle..."; \
+	cast send $$RAFFLE_ADDR "enterRaffle()" --value 0.01ether --rpc-url local --private-key ${ANVIL_PLAYER_2_KEY}
+
+enter-player-3:
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	echo "Player 3 entering raffle..."; \
+	cast send $$RAFFLE_ADDR "enterRaffle()" --value 0.01ether --rpc-url local --private-key ${ANVIL_PLAYER_3_KEY}
+
+enter-player-4:
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	echo "Player 4 entering raffle..."; \
+	cast send $$RAFFLE_ADDR "enterRaffle()" --value 0.01ether --rpc-url local --private-key ${ANVIL_PLAYER_4_KEY}
+
+enter-player-5:
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	echo "Player 5 entering raffle..."; \
+	cast send $$RAFFLE_ADDR "enterRaffle()" --value 0.01ether --rpc-url local --private-key ${ANVIL_PLAYER_5_KEY}
+
+enter-5-players:
+	@echo "Entering 5 players into raffle..."
+	@$(MAKE) -s enter-player-1
+	@$(MAKE) -s enter-player-2
+	@$(MAKE) -s enter-player-3
+	@$(MAKE) -s enter-player-4
+	@$(MAKE) -s enter-player-5
+	@echo "All 5 players entered!"
+
+complete-draw:
+	@echo "Completing full draw cycle (performUpkeep + VRF callback)..."
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	VRF_ADDR=$$(jq -r '.transactions[] | select(.contractName == "MyVRFCoordinatorV2_5Mock" or .contractName == "MyVrfCoordinatorV25Mock") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json | head -1); \
+	echo "Step 1: Performing upkeep on Raffle at $$RAFFLE_ADDR"; \
+	cast send $$RAFFLE_ADDR "performUpkeep(bytes)" "0x" --rpc-url local --account localKey --password "" > /dev/null 2>&1; \
+	echo "Step 2: Triggering VRF callback on Mock at $$VRF_ADDR"; \
+	cast send $$VRF_ADDR "fulfillRandomWords(uint256,address)" 1 $$RAFFLE_ADDR --rpc-url local --account localKey --password "" > /dev/null 2>&1; \
+	echo "Draw completed! Winner selected and new round started."
 
 # Check upkeep status
 upkeep-status:

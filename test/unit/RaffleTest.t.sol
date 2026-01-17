@@ -621,6 +621,43 @@ contract RaffleTest is Test {
         assertEq(actualDeadline, expectedDeadline);
     }
 
+    function testPrizePoolIncreasesWhenPlayersEnter() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+        address player3 = makeAddr("player3");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+        _fundPlayerForRaffle(player3, 1 ether);
+
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+        _enterRaffleAsPlayer(raffle, player3, entranceFee);
+
+        assertEq(
+            raffle.getPrizePool(),
+            entranceFee * 3,
+            "Prize pool should be equal to the entrance fee multiplied by the number of players"
+        );
+    }
+
+    function testGetPlayersCountReturnsNumberOfEntries() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+
+        assertEq(raffle.getPlayersCount(), 3, "Players count should be equal to the number of players");
+    }
+
     function _createValidRaffle() private returns (Raffle) {
         return _createRaffleWithEntranceFeeAndInterval(1 ether, 1);
     }

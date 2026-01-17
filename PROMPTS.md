@@ -55,6 +55,35 @@ Create tasks from .ai/plans/issue_35.md
 
 ---
 
+## Session Startup
+
+### Daily Session Startup Protocol
+
+**Built-in:** Core Claude Code functionality (no subagent)
+
+**Why:** Executes the Daily Session Startup Protocol from CLAUDE.md to prepare your work environment. Checks git status, identifies active GitHub issues, runs tests to find failing tests (Kent Beck warm start), checks for existing plans, and presents complete context. Use at the start of each session or when asking "what should we work on?"
+
+```
+Prepare environment to work on current task
+```
+
+**Alternative prompts:**
+- `What are we working on?`
+- `What's next?`
+- `What should we do today?`
+- `Start work session`
+
+**What it does:**
+1. Checks git status and current branch
+2. Identifies active GitHub issues (in progress status)
+3. Runs tests to find failing tests (Kent Beck technique)
+4. Checks for existing implementation plans
+5. Creates feature branch from latest main
+6. Commits any pending changes
+7. Presents complete context and next steps
+
+---
+
 ## Code Review Phase
 
 ### Code Reviewer
