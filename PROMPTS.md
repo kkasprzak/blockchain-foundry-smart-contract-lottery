@@ -64,7 +64,7 @@ Create tasks from .ai/plans/issue_35.md
 **Why:** Executes the Daily Session Startup Protocol from CLAUDE.md to prepare your work environment. Checks git status, identifies active GitHub issues, runs tests to find failing tests (Kent Beck warm start), checks for existing plans, and presents complete context. Use at the start of each session or when asking "what should we work on?"
 
 ```
-Prepare environment to work on this task
+Prepare environment to work on current task
 ```
 
 **Alternative prompts:**

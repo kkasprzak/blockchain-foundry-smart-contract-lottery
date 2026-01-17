@@ -9,11 +9,13 @@ import { Trophy, Users, Clock, Sparkles, Coins, Gift } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
+import { usePrizePool } from "@/hooks/usePrizePool"
 
 export function RafflePage() {
   const { isConnected } = useAccount()
   const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
+  const { prizePool, isLoading: isLoadingPrizePool } = usePrizePool()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
@@ -158,7 +160,7 @@ export function RafflePage() {
               </CardHeader>
               <CardContent className="relative z-10">
                 <div className="text-5xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]">
-                  0.5 ETH
+                  {isLoadingPrizePool ? "..." : prizePool ? `${prizePool} ETH` : "0 ETH"}
                 </div>
                 <p className="text-base text-amber-400 font-black tracking-wider animate-pulse mt-2">JACKPOT!</p>
               </CardContent>

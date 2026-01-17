@@ -180,6 +180,12 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         return lastTimeStamp + INTERVAL;
     }
 
+    /// @notice Returns the current prize pool for this round
+    /// @return The total accumulated entry fees in wei
+    function getPrizePool() external view returns (uint256) {
+        return prizePool;
+    }
+
     /// @notice Checks if the raffle is ready for a draw
     /// @return upkeepNeeded True if the entry window is closed and raffle is open
     /// @return performData Empty bytes (not used)
