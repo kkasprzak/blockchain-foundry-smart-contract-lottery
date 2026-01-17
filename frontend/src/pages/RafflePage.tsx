@@ -10,12 +10,14 @@ import { WheelPlaceholder } from "@/components/WheelPlaceholder"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 import { usePrizePool } from "@/hooks/usePrizePool"
+import { usePlayersCount } from "@/hooks/usePlayersCount"
 
 export function RafflePage() {
   const { isConnected } = useAccount()
   const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool } = usePrizePool()
+  const { playersCount, isLoading: isLoadingPlayers } = usePlayersCount()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
@@ -259,7 +261,9 @@ export function RafflePage() {
                     <Users className="h-6 w-6" />
                     CURRENT ROUND
                   </CardTitle>
-                  <Badge className="bg-cyan-400 text-purple-950 font-black px-3 py-1">{currentPlayers.length}</Badge>
+                  <Badge className="bg-cyan-400 text-purple-950 font-black px-3 py-1">
+                    {isLoadingPlayers ? "..." : playersCount}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="relative z-10 max-h-96 overflow-y-auto">

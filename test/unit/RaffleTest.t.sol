@@ -643,6 +643,21 @@ contract RaffleTest is Test {
         );
     }
 
+    function testGetPlayersCountReturnsNumberOfEntries() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+
+        assertEq(raffle.getPlayersCount(), 3, "Players count should be equal to the number of players");
+    }
+
     function _createValidRaffle() private returns (Raffle) {
         return _createRaffleWithEntranceFeeAndInterval(1 ether, 1);
     }
