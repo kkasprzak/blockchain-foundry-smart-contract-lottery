@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Trophy, Users, Clock, Sparkles, Coins, Gift } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
+import { useEnterRaffle } from "@/hooks/useEnterRaffle"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 import { usePrizePool } from "@/hooks/usePrizePool"
 import { usePlayersCount } from "@/hooks/usePlayersCount"
@@ -15,7 +16,8 @@ import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 
 export function RafflePage() {
   const { isConnected } = useAccount()
-  const { entranceFee, isLoading: isLoadingFee } = useEntranceFee()
+  const { entranceFee, entranceFeeRaw, isLoading: isLoadingFee } = useEntranceFee()
+  const { enterRaffle } = useEnterRaffle()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { playersCount, isLoading: isLoadingPlayers, refetch: refetchPlayers } = usePlayersCount()
@@ -35,8 +37,9 @@ export function RafflePage() {
   })
 
   const handleEnterRaffle = () => {
-    console.log("Player added to raffle pool")
-    // In production, this would call smart contract to enter raffle
+    if (entranceFeeRaw) {
+      enterRaffle(entranceFeeRaw)
+    }
   }
 
   const handleClaimPrize = () => {
