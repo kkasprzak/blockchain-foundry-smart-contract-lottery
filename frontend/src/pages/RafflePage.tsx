@@ -226,16 +226,22 @@ export function RafflePage() {
                 </div>
                 <Button
                   onClick={handleEnterRaffle}
-                  disabled={!isConnected}
+                  disabled={!isConnected || isEntryWindowClosed}
                   size="lg"
                   onMouseEnter={() => setIsButtonHovered(true)}
                   onMouseLeave={() => setIsButtonHovered(false)}
                   className={`w-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-300 text-purple-950 text-xl font-black py-10 px-8 shadow-[0_0_80px_rgba(251,191,36,1)] hover:shadow-[0_0_150px_rgba(251,191,36,1)] border-4 border-amber-200 hover:scale-105 transition-all rounded-xl relative overflow-hidden ${
-                    isConnected && !isButtonHovered ? "animate-flash" : ""
+                    isConnected && !isEntryWindowClosed && !isButtonHovered ? "animate-flash" : ""
                   }`}
                 >
                   <div className="relative flex items-center justify-center gap-3">
-                    <span className="text-2xl">{isConnected ? "ENTER RAFFLE" : "CONNECT FIRST"}</span>
+                    <span className="text-2xl">
+                      {!isConnected
+                        ? "CONNECT FIRST"
+                        : isEntryWindowClosed
+                          ? "ENTRIES CLOSED"
+                          : "ENTER RAFFLE"}
+                    </span>
                   </div>
                 </Button>
               </CardContent>

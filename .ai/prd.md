@@ -219,7 +219,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
 
 ### Frontend User Stories
 
-- **US-012: View Round Information** [READY]
+- **US-012: View Round Information** [DONE]
 
   As a player,
   I want to see current round information (entrance fee, prize pool, time until drawing),
