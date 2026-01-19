@@ -11,6 +11,7 @@ export function useEntranceFee() {
 
   return {
     entranceFee: data ? formatEther(data) : null,
+    entranceFeeRaw: data ?? null,
     isLoading,
     error,
   };

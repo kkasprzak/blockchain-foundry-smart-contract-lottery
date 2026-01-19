@@ -33,6 +33,13 @@ export const RAFFLE_ABI = [
     stateMutability: "view",
   },
   {
+    type: "function",
+    name: "enterRaffle",
+    inputs: [],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
     type: "event",
     name: "RaffleEntered",
     inputs: [
