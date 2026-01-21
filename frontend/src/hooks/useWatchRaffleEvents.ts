@@ -15,7 +15,6 @@ export function useWatchRaffleEvents({
     abi: RAFFLE_ABI,
     eventName: "RaffleEntered",
     onLogs(logs) {
-      console.log("RaffleEntered event:", logs);
       onRaffleEntered?.();
     },
   });
@@ -25,7 +24,6 @@ export function useWatchRaffleEvents({
     abi: RAFFLE_ABI,
     eventName: "DrawCompleted",
     onLogs(logs) {
-      console.log("DrawCompleted event:", logs);
       onDrawCompleted?.();
     },
   });
