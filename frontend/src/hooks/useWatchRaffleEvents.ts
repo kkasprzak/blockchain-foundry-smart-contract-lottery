@@ -14,7 +14,7 @@ export function useWatchRaffleEvents({
     address: RAFFLE_ADDRESS,
     abi: RAFFLE_ABI,
     eventName: "RaffleEntered",
-    onLogs(logs) {
+    onLogs() {
       onRaffleEntered?.();
     },
   });
@@ -23,7 +23,7 @@ export function useWatchRaffleEvents({
     address: RAFFLE_ADDRESS,
     abi: RAFFLE_ABI,
     eventName: "DrawCompleted",
-    onLogs(logs) {
+    onLogs() {
       onDrawCompleted?.();
     },
   });

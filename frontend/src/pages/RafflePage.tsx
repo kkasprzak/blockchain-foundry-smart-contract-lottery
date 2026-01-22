@@ -46,14 +46,17 @@ export function RafflePage() {
     if (errorString.includes("insufficient funds")) {
       return "Insufficient funds"
     }
-    if (errorString.includes("raffle__entrywindowclosed") || errorString.includes("entry window closed")) {
+    if (errorString.includes("raffle__entrywindowisclosed") || errorString.includes("entry window closed")) {
       return "Entry window closed"
     }
-    if (errorString.includes("raffle__sendmoretoenterraffle") || errorString.includes("entrance fee")) {
+    if (errorString.includes("raffle__invalidentrancefee") || errorString.includes("entrance fee")) {
       return "Invalid entrance fee"
     }
-    if (errorString.includes("raffle__rafflenotopen")) {
-      return "Raffle not open"
+    if (errorString.includes("raffle__drawinginprogress")) {
+      return "Drawing in progress"
+    }
+    if (errorString.includes("raffle__raffleisnotdrawing")) {
+      return "Raffle not in drawing state"
     }
 
     return "Transaction failed. Please try again."
