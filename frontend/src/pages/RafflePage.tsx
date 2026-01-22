@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -17,13 +17,14 @@ import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 export function RafflePage() {
   const { isConnected } = useAccount()
   const { entranceFee, entranceFeeRaw, isLoading: isLoadingFee } = useEntranceFee()
-  const { enterRaffle } = useEnterRaffle()
+  const { enterRaffle, isPending, isError, error } = useEnterRaffle()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { playersCount, isLoading: isLoadingPlayers, refetch: refetchPlayers } = usePlayersCount()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
+  const [isDismissed, setIsDismissed] = useState(false)
 
   useWatchRaffleEvents({
     onRaffleEntered: () => {
@@ -36,10 +37,47 @@ export function RafflePage() {
     },
   })
 
+  const parseErrorMessage = (error: Error): string => {
+    const errorString = error.message.toLowerCase()
+
+    if (errorString.includes("user rejected") || errorString.includes("user denied")) {
+      return "Transaction rejected"
+    }
+    if (errorString.includes("insufficient funds")) {
+      return "Insufficient funds"
+    }
+    if (errorString.includes("raffle__entrywindowisclosed") || errorString.includes("entry window closed")) {
+      return "Entry window closed"
+    }
+    if (errorString.includes("raffle__invalidentrancefee") || errorString.includes("entrance fee")) {
+      return "Invalid entrance fee"
+    }
+    if (errorString.includes("raffle__drawinginprogress")) {
+      return "Drawing in progress"
+    }
+    if (errorString.includes("raffle__raffleisnotdrawing")) {
+      return "Raffle not in drawing state"
+    }
+
+    return "Transaction failed. Please try again."
+  }
+
+  const errorMessage = useMemo(() => {
+    if (isError && error && !isDismissed) {
+      return parseErrorMessage(error)
+    }
+    return null
+  }, [isError, error, isDismissed])
+
   const handleEnterRaffle = () => {
+    setIsDismissed(false)
     if (entranceFeeRaw) {
       enterRaffle(entranceFeeRaw)
     }
+  }
+
+  const handleDismissError = () => {
+    setIsDismissed(true)
   }
 
   const handleClaimPrize = () => {
@@ -227,26 +265,44 @@ export function RafflePage() {
                   </div>
                   <p className="text-sm text-purple-300 font-bold">Per ticket</p>
                 </div>
-                <Button
-                  onClick={handleEnterRaffle}
-                  disabled={!isConnected || isEntryWindowClosed}
-                  size="lg"
-                  onMouseEnter={() => setIsButtonHovered(true)}
-                  onMouseLeave={() => setIsButtonHovered(false)}
-                  className={`w-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-300 text-purple-950 text-xl font-black py-10 px-8 shadow-[0_0_80px_rgba(251,191,36,1)] hover:shadow-[0_0_150px_rgba(251,191,36,1)] border-4 border-amber-200 hover:scale-105 transition-all rounded-xl relative overflow-hidden ${
-                    isConnected && !isEntryWindowClosed && !isButtonHovered ? "animate-flash" : ""
-                  }`}
-                >
-                  <div className="relative flex items-center justify-center gap-3">
-                    <span className="text-2xl">
-                      {!isConnected
-                        ? "CONNECT FIRST"
-                        : isEntryWindowClosed
-                          ? "ENTRIES CLOSED"
-                          : "ENTER RAFFLE"}
-                    </span>
-                  </div>
-                </Button>
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleEnterRaffle}
+                    disabled={!isConnected || isEntryWindowClosed || isPending}
+                    size="lg"
+                    onMouseEnter={() => setIsButtonHovered(true)}
+                    onMouseLeave={() => setIsButtonHovered(false)}
+                    className={`w-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-300 text-purple-950 text-xl font-black py-10 px-8 shadow-[0_0_80px_rgba(251,191,36,1)] hover:shadow-[0_0_150px_rgba(251,191,36,1)] border-4 border-amber-200 hover:scale-105 transition-all rounded-xl relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                      isConnected && !isEntryWindowClosed && !isButtonHovered && !isPending ? "animate-flash" : ""
+                    }`}
+                  >
+                    <div className="relative flex items-center justify-center gap-3">
+                      <span className="text-2xl">
+                        {!isConnected
+                          ? "CONNECT FIRST"
+                          : isPending
+                            ? "PENDING..."
+                            : isEntryWindowClosed
+                              ? "ENTRIES CLOSED"
+                              : "ENTER RAFFLE"}
+                      </span>
+                    </div>
+                  </Button>
+                  {errorMessage && (
+                    <div className="bg-red-900/80 border-2 border-red-500 rounded-lg p-3 backdrop-blur-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-red-200 font-bold text-sm flex-1">{errorMessage}</p>
+                        <button
+                          onClick={handleDismissError}
+                          className="text-red-300 hover:text-red-100 font-black text-lg leading-none"
+                          aria-label="Dismiss error"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
