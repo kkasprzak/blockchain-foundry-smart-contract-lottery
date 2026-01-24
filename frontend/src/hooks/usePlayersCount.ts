@@ -9,7 +9,7 @@ export function usePlayersCount() {
   });
 
   return {
-    playersCount: data ? Number(data) : 0,
+    entriesCount: data ? Number(data) : 0,
     isLoading,
     error,
     refetch,
