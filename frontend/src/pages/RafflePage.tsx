@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Trophy, Users, Clock, Sparkles, Coins, Gift } from "lucide-react"
+import { Trophy, Clock, Sparkles, Coins, Gift, Ticket } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useEnterRaffle } from "@/hooks/useEnterRaffle"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 import { usePrizePool } from "@/hooks/usePrizePool"
-import { usePlayersCount } from "@/hooks/usePlayersCount"
+import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 
 export function RafflePage() {
@@ -20,7 +20,7 @@ export function RafflePage() {
   const { enterRaffle, isPending, isError, error } = useEnterRaffle()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
-  const { playersCount, isLoading: isLoadingPlayers, refetch: refetchPlayers } = usePlayersCount()
+  const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
@@ -29,11 +29,11 @@ export function RafflePage() {
   useWatchRaffleEvents({
     onRaffleEntered: () => {
       refetchPrizePool()
-      refetchPlayers()
+      refetchEntries()
     },
     onDrawCompleted: () => {
       refetchPrizePool()
-      refetchPlayers()
+      refetchEntries()
     },
   })
 
@@ -335,11 +335,11 @@ export function RafflePage() {
               <CardHeader className="relative z-10">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-cyan-300 text-xl font-black">
-                    <Users className="h-6 w-6" />
+                    <Ticket className="h-6 w-6" />
                     CURRENT ROUND
                   </CardTitle>
                   <Badge className="bg-cyan-400 text-purple-950 font-black px-3 py-1">
-                    {isLoadingPlayers ? "..." : playersCount}
+                    {isLoadingEntries ? "..." : entriesCount}
                   </Badge>
                 </div>
               </CardHeader>

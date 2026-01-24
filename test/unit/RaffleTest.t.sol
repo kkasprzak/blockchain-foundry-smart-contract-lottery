@@ -643,7 +643,7 @@ contract RaffleTest is Test {
         );
     }
 
-    function testGetPlayersCountReturnsNumberOfEntries() public {
+    function testGetEntriesCountReturnsNumberOfEntries() public {
         uint256 entranceFee = 0.01 ether;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
         address player1 = makeAddr("player1");
@@ -655,7 +655,7 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player1, entranceFee);
         _enterRaffleAsPlayer(raffle, player2, entranceFee);
 
-        assertEq(raffle.getPlayersCount(), 3, "Players count should be equal to the number of players");
+        assertEq(raffle.getEntriesCount(), 3, "Entries count should be equal to the number of entries");
     }
 
     function _createValidRaffle() private returns (Raffle) {

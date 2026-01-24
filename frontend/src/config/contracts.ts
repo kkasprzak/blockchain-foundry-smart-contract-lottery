@@ -27,7 +27,7 @@ export const RAFFLE_ABI = [
   },
   {
     type: "function",
-    name: "getPlayersCount",
+    name: "getEntriesCount",
     inputs: [],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",

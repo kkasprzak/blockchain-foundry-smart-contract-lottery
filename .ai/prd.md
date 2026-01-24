@@ -259,7 +259,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given the entry window is closed, when I view the button, then it is disabled with explanatory text
   - Given I click "Enter Raffle", when the transaction is initiated, then my wallet prompts me to confirm the exact entrance fee amount
   - Given I confirm the transaction, when it is pending, then I see a "pending" status indicator
-  - Given the transaction is confirmed, when the blockchain updates, then I see myself in the players list
+  - Given the transaction is confirmed, when the blockchain updates, then the player count increases
   - Given I already entered this round, when I click "Enter Raffle" again, then I am added as a separate entry (increasing my chances)
   - Given the transaction fails, when the error occurs, then I see a clear error message
 
