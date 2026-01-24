@@ -192,6 +192,12 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         return players.length;
     }
 
+    /// @notice Returns the number of entries in current round
+    /// @return The count of entries (same player can enter multiple times)
+    function getEntriesCount() external view returns (uint256) {
+        return players.length;
+    }
+
     /// @notice Checks if the raffle is ready for a draw
     /// @return upkeepNeeded True if the entry window is closed and raffle is open
     /// @return performData Empty bytes (not used)
