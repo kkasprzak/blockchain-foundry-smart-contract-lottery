@@ -11,7 +11,7 @@ import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useEnterRaffle } from "@/hooks/useEnterRaffle"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 import { usePrizePool } from "@/hooks/usePrizePool"
-import { usePlayersCount } from "@/hooks/usePlayersCount"
+import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 
 export function RafflePage() {
@@ -20,7 +20,7 @@ export function RafflePage() {
   const { enterRaffle, isPending, isError, error } = useEnterRaffle()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
-  const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = usePlayersCount()
+  const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
   const [lastRoundWinner] = useState<string | null>(null)
   const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)

@@ -1,7 +1,7 @@
 import { useReadContract } from "wagmi";
 import { RAFFLE_ABI, RAFFLE_ADDRESS } from "@/config/contracts";
 
-export function usePlayersCount() {
+export function useEntriesCount() {
   const { data, isLoading, error, refetch } = useReadContract({
     address: RAFFLE_ADDRESS,
     abi: RAFFLE_ABI,
