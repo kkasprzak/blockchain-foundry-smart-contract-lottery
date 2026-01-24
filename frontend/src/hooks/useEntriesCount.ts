@@ -5,7 +5,7 @@ export function useEntriesCount() {
   const { data, isLoading, error, refetch } = useReadContract({
     address: RAFFLE_ADDRESS,
     abi: RAFFLE_ABI,
-    functionName: "getPlayersCount",
+    functionName: "getEntriesCount",
   });
 
   return {
