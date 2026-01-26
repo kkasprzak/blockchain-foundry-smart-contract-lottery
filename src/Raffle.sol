@@ -192,6 +192,13 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         return players.length;
     }
 
+    /// @notice Returns the unclaimed prize amount for a given address
+    /// @param player The address to check
+    /// @return The unclaimed prize amount in wei
+    function getUnclaimedPrize(address player) external view returns (uint256) {
+        return unclaimedPrizes[player];
+    }
+
     /// @notice Checks if the raffle is ready for a draw
     /// @return upkeepNeeded True if the entry window is closed and raffle is open
     /// @return performData Empty bytes (not used)
