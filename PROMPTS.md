@@ -6,6 +6,28 @@ Prompts organized by development phase. Subagents are defined in `.claude/agents
 
 ## Planning Phase
 
+### Planning Workflow Summary
+
+**Complete workflow for planning a User Story:**
+
+1. **story-planner** → Creates `.ai/plans/issue_XX.md` with stages and test placeholders
+2. **acceptance-test-creator** → Fills Acceptance Tests in the plan file
+3. **task-creator** → Creates GitHub issues from complete plan (with tests)
+
+**Example:**
+```bash
+# Step 1: Create plan
+Break down US-017 into delivery stages
+
+# Step 2: Fill tests
+Fill acceptance tests for .ai/plans/issue_40.md
+
+# Step 3: Create issues
+Create tasks from .ai/plans/issue_40.md
+```
+
+---
+
 ### Story Prioritizer
 
 **Subagent:** `story-prioritizer`
@@ -26,7 +48,7 @@ Which User Story next?
 
 **Subagent:** `story-planner`
 
-**Why:** Creates Incremental Delivery Plans for User Stories using Vertical Slices methodology. Organizes work by Acceptance Criteria (not technology layers), sorts from simplest to most complex. Each stage delivers testable user value incrementally. Does NOT provide technical implementation details - focuses on WHAT to deliver, not HOW to build it.
+**Why:** Creates Incremental Delivery Plans for User Stories using Vertical Slices methodology. Organizes work by Acceptance Criteria (not technology layers), sorts from simplest to most complex. Each stage delivers testable user value incrementally. Does NOT provide technical implementation details - focuses on WHAT to deliver, not HOW to build it. Creates `.ai/plans/issue_XX.md` with placeholders for Acceptance Tests (to be filled by acceptance-test-creator).
 
 ```
 Break down US-012 into delivery stages
@@ -35,13 +57,39 @@ Break down US-012 into delivery stages
 **Alternative prompts:**
 - `Plan US-014 using Vertical Slices`
 
+**Next step:** Use `acceptance-test-creator` to fill in the Acceptance Tests for each stage.
+
+---
+
+### Acceptance Test Creator
+
+**Subagent:** `acceptance-test-creator`
+
+**Why:** Generates Acceptance Tests for each stage in the Incremental Delivery Plan. Use AFTER `story-planner` to fill in the "Acceptance Tests" section in `.ai/plans/issue_XX.md` before creating GitHub issues. Replaces placeholders with minimal, focused test scenarios for a solo developer (executable in 15-20 minutes per stage). Prioritizes: AC verification, security (for blockchain features), and high-probability edge cases. Developer knows upfront how each stage will be verified.
+
+```
+Fill acceptance tests for .ai/plans/issue_60.md
+```
+
+**Alternative prompts:**
+- `Generate acceptance tests for issue_60.md`
+- `Add tests to plan in .ai/plans/issue_35.md`
+
+**Output format (per stage):**
+- MUST TEST: AC Verification
+- MUST TEST: Security (if applicable)
+- NICE TO HAVE
+- Quick Checklist
+
+**Next step:** Use `task-creator` to convert the complete plan (with tests) into GitHub issues.
+
 ---
 
 ### Task Creator
 
 **Subagent:** `task-creator`
 
-**Why:** Converts Incremental Delivery Plans into GitHub issues. Takes a plan file from `.ai/plans/` and creates individual GitHub issues for each stage with proper dependencies. Issues are created sequentially with correct dependency tracking using actual issue numbers. Always uses `feature` label. Has pre-approved permissions for `gh issue create/edit` commands.
+**Why:** Converts Incremental Delivery Plans into GitHub issues. Takes a COMPLETE plan file from `.ai/plans/` (with Acceptance Tests already filled) and creates individual GitHub issues for each stage with proper dependencies. Issues are created sequentially with correct dependency tracking using actual issue numbers. Always uses `feature` label. Has pre-approved permissions for `gh issue create/edit` commands. Each issue includes the Acceptance Tests from the plan.
 
 ```
 Create tasks from .ai/plans/issue_35.md
@@ -51,30 +99,7 @@ Create tasks from .ai/plans/issue_35.md
 - `Convert .ai/plans/issue_44.md to tasks`
 - `Create tasks from plan file .ai/plans/issue_35.md`
 
-**Note:** Always specify the exact plan file path.
-
----
-
-### Acceptance Test Creator
-
-**Subagent:** `acceptance-test-creator`
-
-**Why:** Generates Acceptance Tests for GitHub tasks/issues. Use after `task-creator` to fill in the "Acceptance Tests" section before development starts. Developer knows upfront how the task will be verified. Produces minimal, focused test scenarios for a solo developer (executable in 15-20 minutes). Prioritizes: AC verification, security (for blockchain features), and high-probability edge cases.
-
-```
-Generate acceptance tests for issue #59
-```
-
-**Alternative prompts:**
-- `Create acceptance tests for #59`
-- `What should I test for issue #59?`
-- `Fill acceptance tests section for issue #59`
-
-**Output format:**
-- 🔴 MUST TEST: AC Verification
-- 🔴 MUST TEST: Security (if applicable)
-- 🟡 NICE TO HAVE
-- ✅ Quick Checklist
+**Note:** Always specify the exact plan file path. Ensure acceptance tests are filled before running this.
 
 ---
 
