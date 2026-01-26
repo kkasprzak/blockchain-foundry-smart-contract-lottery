@@ -13,16 +13,16 @@ import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
 import { usePrizePool } from "@/hooks/usePrizePool"
 import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
+import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 
 export function RafflePage() {
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
   const { entranceFee, entranceFeeRaw, isLoading: isLoadingFee } = useEntranceFee()
   const { enterRaffle, isPending, isError, error } = useEnterRaffle()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
-  const [lastRoundWinner] = useState<string | null>(null)
-  const [isCurrentUserWinner, setIsCurrentUserWinner] = useState(false)
+  const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize } = useUnclaimedPrize(address)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
 
@@ -81,7 +81,8 @@ export function RafflePage() {
   }
 
   const handleClaimPrize = () => {
-    setIsCurrentUserWinner(false)
+    // TODO: Implement claim prize transaction in Stage 2
+    console.log("Claim prize clicked")
   }
 
   const recentWinners = [
@@ -168,7 +169,7 @@ export function RafflePage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 relative z-10">
-        {lastRoundWinner && (
+        {hasUnclaimedPrize && !isLoadingUnclaimedPrize && (
           <Card className="mb-6 border-4 border-emerald-400 bg-gradient-to-r from-emerald-900/95 via-green-900/95 to-emerald-900/95 backdrop-blur-md shadow-[0_0_50px_rgba(52,211,153,0.6)] relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 via-transparent to-emerald-400/10 animate-pulse"></div>
             <CardContent className="p-6 relative z-10">
@@ -182,21 +183,19 @@ export function RafflePage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-emerald-300 drop-shadow-[0_0_15px_rgba(52,211,153,0.8)]">
-                      {isCurrentUserWinner ? "🎉 YOU WON! 🎉" : "LAST ROUND WINNER"}
+                      🎉 YOU WON! 🎉
                     </h3>
-                    <p className="text-amber-300 font-mono font-bold text-lg">{lastRoundWinner}</p>
+                    <p className="text-amber-300 font-mono font-bold text-lg">Unclaimed Prize: {unclaimedPrize} ETH</p>
                   </div>
                 </div>
-                {isCurrentUserWinner && (
-                  <Button
-                    onClick={handleClaimPrize}
-                    size="lg"
-                    className="bg-gradient-to-r from-emerald-400 via-green-300 to-emerald-400 hover:from-emerald-300 hover:via-green-200 hover:to-emerald-300 text-purple-950 text-xl font-black shadow-[0_0_30px_rgba(52,211,153,1)] hover:shadow-[0_0_50px_rgba(52,211,153,1)] border-3 border-emerald-200 px-8 py-6 hover:scale-105 transition-all rounded-2xl relative overflow-hidden"
-                  >
-                    <Gift className="mr-2 h-6 w-6" />
-                    CLAIM PRIZE • 0.5 ETH
-                  </Button>
-                )}
+                <Button
+                  onClick={handleClaimPrize}
+                  size="lg"
+                  className="bg-gradient-to-r from-emerald-400 via-green-300 to-emerald-400 hover:from-emerald-300 hover:via-green-200 hover:to-emerald-300 text-purple-950 text-xl font-black shadow-[0_0_30px_rgba(52,211,153,1)] hover:shadow-[0_0_50px_rgba(52,211,153,1)] border-3 border-emerald-200 px-8 py-6 hover:scale-105 transition-all rounded-2xl relative overflow-hidden"
+                >
+                  <Gift className="mr-2 h-6 w-6" />
+                  CLAIM PRIZE • {unclaimedPrize} ETH
+                </Button>
               </div>
             </CardContent>
           </Card>
