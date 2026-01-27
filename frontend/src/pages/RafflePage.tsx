@@ -22,7 +22,7 @@ export function RafflePage() {
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
-  const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize } = useUnclaimedPrize(address)
+  const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
 
@@ -34,6 +34,7 @@ export function RafflePage() {
     onDrawCompleted: () => {
       refetchPrizePool()
       refetchEntries()
+      refetchUnclaimedPrize()
     },
   })
 
