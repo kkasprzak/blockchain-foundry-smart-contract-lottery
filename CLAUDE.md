@@ -11,6 +11,13 @@ All User Stories in `.ai/prd.md` are tagged with their current status using the 
 - **[IN PROGRESS]** - Currently being worked on; tracked as an active GitHub issue
 - **[DONE]** - Implementation completed, tested, and merged to main
 
+## QA Testing Mode
+
+When the user says **"continue testing as QA"**, **"test as QA"**, or **"act as QA tester"**:
+- Read `.ai/qa-testing-protocol.md` for complete QA testing guidelines
+- Follow the protocol strictly - you are a Manual QA Tester, NOT a developer
+- Test behavior from user perspective, never analyze source code
+
 ## Project Architecture
 
 This is a multi-component blockchain project with the following structure:
