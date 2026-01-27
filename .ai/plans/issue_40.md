@@ -47,11 +47,13 @@ The smart contract (US-010) already implements the pull payment pattern with:
 - Given I have unclaimed winnings, when I view the page, then I see a "Claim Prize" button
 - Given I have unclaimed winnings, when I view my balance, then I see the prize amount available to claim
 - Given I have no unclaimed prizes, when I view the page, then the "Claim Prize" button is not visible
+- Given the draw completes with me as winner, when I stay on the page, then the claim prize section appears automatically without page refresh
 
 **What we are building:**
 - Display user's unclaimed prize balance if greater than zero
 - Show "Claim Prize" button only when user has unclaimed winnings
 - Button and balance are hidden when there is nothing to claim
+- Automatic UI refresh when DrawCompleted event is emitted (user wins without page refresh)
 
 **Dependencies on previous stages:**
 - None
@@ -61,6 +63,7 @@ The smart contract (US-010) already implements the pull payment pattern with:
 - Connected user without unclaimed prize does not see the claim section
 - Prize amount is read from the deployed contract
 - Smart contract needs `getUnclaimedPrize(address)` getter function
+- When DrawCompleted event fires and connected user wins, claim section appears automatically within 2-3 seconds
 
 **Acceptance Tests:**
 
@@ -70,17 +73,18 @@ The smart contract (US-010) already implements the pull payment pattern with:
 | AC-01 | AC1 | Button appears with unclaimed prize | Won raffle (0.5 ETH prize) → Connect wallet → "Claim Prize" button visible |
 | AC-02 | AC2 | Prize amount displayed | Have 0.5 ETH unclaimed → View page → "Claim Prize: 0.5 ETH" shown |
 | AC-03 | AC6 | Button hidden without prize | No unclaimed winnings → Connect wallet → No claim section visible |
+| AC-04 | AC4 | Automatic UI refresh on win | Connected wallet → Draw completes, I win → Claim section appears within 2-3 seconds (no F5 needed) |
 
 ### NICE TO HAVE
 | ID | Type | Test | Given → When → Then |
 |----|------|------|---------------------|
 | OPT-01 | Edge | Multiple unclaimed prizes | Won rounds 1 and 2 (total 1.0 ETH) → View page → Shows combined total "1.0 ETH" |
-| OPT-02 | UX | Balance updates automatically | Just won round → Wait 2-3 seconds → Claim button appears without page refresh |
 
 ### Quick Checklist (2 min)
 - [ ] Prize amount matches what user won in previous round
 - [ ] Button does not appear for users who never won
 - [ ] ETH amount formatted clearly (not wei or scientific notation)
+- [ ] Claim section appears automatically when winning (no F5 needed)
 
 ---
 
