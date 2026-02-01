@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Trophy, Clock, Sparkles, Coins, Gift, Ticket } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
+import { DrawCompletedAnnouncement } from "@/components/DrawCompletedAnnouncement"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useEnterRaffle } from "@/hooks/useEnterRaffle"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
@@ -15,6 +16,7 @@ import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
+import type { DrawingResult } from "@/types/raffle"
 
 export function RafflePage() {
   const { isConnected, address } = useAccount()
@@ -28,18 +30,22 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
   const [isClaimDismissed, setIsClaimDismissed] = useState(false)
+  const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
 
   useWatchRaffleEvents({
     onRaffleEntered: () => {
       refetchPrizePool()
       refetchEntries()
     },
-    onDrawCompleted: () => {
+    onDrawCompleted: (result) => {
+      setDrawingResult(result)
       refetchPrizePool()
       refetchEntries()
-refetchUnclaimedPrize()
+      refetchUnclaimedPrize()
     },
   })
+
+  const isCurrentUserWinner = drawingResult?.winner.toLowerCase() === address?.toLowerCase()
 
   useEffect(() => {
     if (isClaimSuccess) {
@@ -237,6 +243,15 @@ refetchUnclaimedPrize()
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {drawingResult && (
+          <DrawCompletedAnnouncement
+            winner={drawingResult.winner}
+            prizeFormatted={drawingResult.prizeFormatted}
+            isCurrentUserWinner={isCurrentUserWinner ?? false}
+            onDismiss={() => setDrawingResult(null)}
+          />
         )}
 
         <div className="grid gap-6 lg:grid-cols-12">
