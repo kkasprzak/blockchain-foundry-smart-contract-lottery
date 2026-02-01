@@ -103,6 +103,29 @@ Create tasks from .ai/plans/issue_35.md
 
 ---
 
+### Acceptance Test Creator
+
+**Subagent:** `acceptance-test-creator`
+
+**Why:** Generates Acceptance Tests for GitHub tasks/issues. Use after `task-creator` to fill in the "Acceptance Tests" section before development starts. Developer knows upfront how the task will be verified. Produces minimal, focused test scenarios for a solo developer (executable in 15-20 minutes). Prioritizes: AC verification, security (for blockchain features), and high-probability edge cases.
+
+```
+Generate acceptance tests for issue #59
+```
+
+**Alternative prompts:**
+- `Create acceptance tests for #59`
+- `What should I test for issue #59?`
+- `Fill acceptance tests section for issue #59`
+
+**Output format:**
+- 🔴 MUST TEST: AC Verification
+- 🔴 MUST TEST: Security (if applicable)
+- 🟡 NICE TO HAVE
+- ✅ Quick Checklist
+
+---
+
 ## Session Startup
 
 ### Daily Session Startup Protocol
