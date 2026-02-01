@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: help install build test clean deploy-sepolia deploy-local slither lint
+.PHONY: help install build test clean deploy-sepolia deploy-local slither lint anvil-start anvil-stop
 .PHONY: create-subscription fund-subscription add-consumer subscription-status
 .PHONY: register-upkeep fund-upkeep upkeep-status
 .PHONY: frontend-dev frontend-build indexer-dev indexer-codegen
@@ -15,6 +15,8 @@ help:
 	@echo "  install          Install forge dependencies"
 	@echo "  build            Compile all contracts"
 	@echo "  clean            Clean build artifacts"
+	@echo "  anvil-start      Start Anvil in background (logs to anvil.log)"
+	@echo "  anvil-stop       Stop Anvil"
 	@echo ""
 	@echo "Testing Commands:"
 	@echo "  test             Run all tests"
@@ -77,6 +79,18 @@ test:
 # Clean build artifacts
 clean:
 	forge clean
+
+# Start Anvil in background with logs (mines block every 5s)
+anvil-start:
+	@echo "Starting Anvil..."
+	@anvil --block-time 5 > anvil.log 2>&1 &
+	@sleep 1
+	@echo "Anvil running (PID: $$(lsof -ti:8545)). Logs: anvil.log"
+
+# Stop Anvil
+anvil-stop:
+	@echo "Stopping Anvil..."
+	@-kill $$(lsof -ti:8545) 2>/dev/null && echo "Anvil stopped." || echo "Anvil not running."
 
 # Deploy to Sepolia testnet
 deploy-sepolia:
@@ -187,7 +201,7 @@ upkeep-status:
 
 # Frontend commands
 frontend-dev:
-	cd frontend && pnpm dev
+	cd frontend && pnpm dev 2>&1 | tee dev.log
 
 frontend-build:
 	cd frontend && pnpm build

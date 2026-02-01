@@ -180,7 +180,31 @@ Create a contact form using components from the shadcn registry
 
 ## Testing Phase
 
-*No prompts yet.*
+### QA Manual Testing
+
+**Built-in:** Core Claude Code functionality (no subagent)
+
+**Why:** Activates Manual QA Tester mode following `.ai/qa-testing-protocol.md`. Tests Acceptance Criteria from user perspective without analyzing source code. Guides you step-by-step through testing scenarios, documents behavior, and reports bugs. Use when you need to verify that implemented features match the Acceptance Criteria defined in the plan.
+
+```
+Continue testing as QA
+```
+
+**Alternative prompts:**
+- `Test as QA`
+- `Act as QA tester`
+- `Start QA testing session`
+
+**What it does:**
+1. Reads the current branch and identifies issue number
+2. Loads the implementation plan from `.ai/plans/issue_XX.md`
+3. Presents available stages and Acceptance Criteria to test
+4. Asks which AC you want to test
+5. Guides you step-by-step through test execution
+6. Documents results as PASS/FAIL/BLOCKED
+7. Creates bug reports in `.ai/bugs/` if issues found
+
+---
 
 ---
 

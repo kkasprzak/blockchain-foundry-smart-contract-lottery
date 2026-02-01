@@ -12,5 +12,11 @@ docs/
 # Dotenv file
 .env
 
+# Anvil logs
+anvil.log
+
+# Frontend dev logs
+frontend/dev.log
+
 # AI PR comments (work in progress)
 .ai/pr/
