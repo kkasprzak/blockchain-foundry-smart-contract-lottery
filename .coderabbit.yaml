@@ -1,0 +1,12 @@
+# CodeRabbit Configuration
+# https://docs.coderabbit.ai/reference/configuration
+
+reviews:
+  # Only review actual code, not documentation or AI config files
+  path_filters:
+    - "!**/*.md"
+    - "!.ai/**"
+    - "!.claude/**"
+    - "!PROMPTS.md"
+    - "!CLAUDE.md"
+    - "!README.md"

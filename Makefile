@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: help install build test clean deploy-sepolia deploy-local slither lint
+.PHONY: help install build test clean deploy-sepolia deploy-local slither lint anvil-start anvil-stop
 .PHONY: create-subscription fund-subscription add-consumer subscription-status
 .PHONY: register-upkeep fund-upkeep upkeep-status
 .PHONY: frontend-dev frontend-build indexer-dev indexer-codegen
@@ -15,6 +15,8 @@ help:
 	@echo "  install          Install forge dependencies"
 	@echo "  build            Compile all contracts"
 	@echo "  clean            Clean build artifacts"
+	@echo "  anvil-start      Start Anvil in background (logs to anvil.log)"
+	@echo "  anvil-stop       Stop Anvil"
 	@echo ""
 	@echo "Testing Commands:"
 	@echo "  test             Run all tests"
@@ -77,6 +79,18 @@ test:
 # Clean build artifacts
 clean:
 	forge clean
+
+# Start Anvil in background with logs (mines block every 5s)
+anvil-start:
+	@echo "Starting Anvil..."
+	@anvil --block-time 5 > anvil.log 2>&1 &
+	@sleep 1
+	@echo "Anvil running (PID: $$(lsof -ti:8545)). Logs: anvil.log"
+
+# Stop Anvil
+anvil-stop:
+	@echo "Stopping Anvil..."
+	@-kill $$(lsof -ti:8545) 2>/dev/null && echo "Anvil stopped." || echo "Anvil not running."
 
 # Deploy to Sepolia testnet
 deploy-sepolia:
@@ -176,9 +190,11 @@ complete-draw:
 	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
 	VRF_ADDR=$$(jq -r '.transactions[] | select(.contractName == "MyVRFCoordinatorV2_5Mock" or .contractName == "MyVrfCoordinatorV25Mock") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json | head -1); \
 	echo "Step 1: Performing upkeep on Raffle at $$RAFFLE_ADDR"; \
-	cast send $$RAFFLE_ADDR "performUpkeep(bytes)" "0x" --rpc-url local --account localKey --password "" > /dev/null 2>&1; \
-	echo "Step 2: Triggering VRF callback on Mock at $$VRF_ADDR"; \
-	cast send $$VRF_ADDR "fulfillRandomWords(uint256,address)" 1 $$RAFFLE_ADDR --rpc-url local --account localKey --password "" > /dev/null 2>&1; \
+	cast send $$RAFFLE_ADDR "performUpkeep(bytes)" "0x" --rpc-url local --account localKey --password "" || { echo "ERROR: performUpkeep failed"; exit 1; }; \
+	echo "Step 2: Getting request ID from RandomWordsRequested event..."; \
+	REQUEST_ID=$$(cast logs --from-block 1 --address $$VRF_ADDR --rpc-url http://localhost:8545 --json | jq -r '.[-1].data[0:66]' | xargs printf "%d"); \
+	echo "Step 3: Triggering VRF callback with request ID $$REQUEST_ID"; \
+	cast send $$VRF_ADDR "fulfillRandomWords(uint256,address)" $$REQUEST_ID $$RAFFLE_ADDR --rpc-url local --account localKey --password "" || { echo "ERROR: fulfillRandomWords failed"; exit 1; }; \
 	echo "Draw completed! Winner selected and new round started."
 
 # Check upkeep status
@@ -187,7 +203,7 @@ upkeep-status:
 
 # Frontend commands
 frontend-dev:
-	cd frontend && pnpm dev
+	cd frontend && pnpm dev 2>&1 | tee dev.log
 
 frontend-build:
 	cd frontend && pnpm build

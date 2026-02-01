@@ -247,7 +247,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given my wallet is connected, when I view the header, then I see my ETH balance
   - Given my wallet is connected, when I click my address, then I can disconnect my wallet
 
-- **US-014: Enter Raffle** [READY]
+- **US-014: Enter Raffle** [DONE]
 
   As a player,
   I want to pay the entrance fee to join the current round,

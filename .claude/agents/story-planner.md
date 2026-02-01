@@ -63,6 +63,9 @@ Sorting criteria (in order of importance):
 - How can we manually verify this AC is complete?
 - What can the user see/do that they couldn't before?
 
+**Acceptance Tests:**
+[To be filled by acceptance-test-creator after plan is created]
+
 ---
 
 ## Summary Table

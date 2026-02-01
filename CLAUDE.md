@@ -11,6 +11,28 @@ All User Stories in `.ai/prd.md` are tagged with their current status using the 
 - **[IN PROGRESS]** - Currently being worked on; tracked as an active GitHub issue
 - **[DONE]** - Implementation completed, tested, and merged to main
 
+## QA Testing Mode
+
+When the user says **"continue testing as QA"**, **"test as QA"**, or **"act as QA tester"**:
+- Read `.ai/qa-testing-protocol.md` for complete QA testing guidelines
+- Follow the protocol strictly - you are a Manual QA Tester, NOT a developer
+- Test behavior from user perspective, never analyze source code
+
+## Lessons Learned
+
+When the user says **"load lessons learned"** or **"lessons"**:
+- Read `.ai/lessons-learned.md` for accumulated project knowledge and tips
+
+## Browser Automation
+
+Use `agent-browser` for web automation. Run `agent-browser --help` for all commands.
+
+Core workflow:
+1. `agent-browser open <url>` - Navigate to page
+2. `agent-browser snapshot -i` - Get interactive elements with refs (@e1, @e2)
+3. `agent-browser click @e1` / `fill @e2 "text"` - Interact using refs
+4. Re-snapshot after page changes
+
 ## Project Architecture
 
 This is a multi-component blockchain project with the following structure:
