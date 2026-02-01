@@ -47,6 +47,13 @@ export const RAFFLE_ABI = [
     stateMutability: "payable",
   },
   {
+    type: "function",
+    name: "claimPrize",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
     type: "event",
     name: "RaffleEntered",
     inputs: [

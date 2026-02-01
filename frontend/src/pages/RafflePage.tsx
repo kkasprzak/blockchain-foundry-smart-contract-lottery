@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import { usePrizePool } from "@/hooks/usePrizePool"
 import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
+import { useClaimPrize } from "@/hooks/useClaimPrize"
 
 export function RafflePage() {
   const { isConnected, address } = useAccount()
@@ -23,8 +24,10 @@ export function RafflePage() {
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
   const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
+  const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
+  const [isClaimDismissed, setIsClaimDismissed] = useState(false)
 
   useWatchRaffleEvents({
     onRaffleEntered: () => {
@@ -37,6 +40,12 @@ export function RafflePage() {
       refetchUnclaimedPrize()
     },
   })
+
+  useEffect(() => {
+    if (isClaimSuccess) {
+      refetchUnclaimedPrize()
+    }
+  }, [isClaimSuccess, refetchUnclaimedPrize])
 
   const parseErrorMessage = (error: Error): string => {
     const errorString = error.message.toLowerCase()
@@ -70,6 +79,13 @@ export function RafflePage() {
     return null
   }, [isError, error, isDismissed])
 
+  const claimErrorMessage = useMemo(() => {
+    if (isClaimError && claimError && !isClaimDismissed) {
+      return parseErrorMessage(claimError)
+    }
+    return null
+  }, [isClaimError, claimError, isClaimDismissed])
+
   const handleEnterRaffle = () => {
     setIsDismissed(false)
     if (entranceFeeRaw) {
@@ -82,8 +98,12 @@ export function RafflePage() {
   }
 
   const handleClaimPrize = () => {
-    // TODO: Implement claim prize transaction in Stage 2
-    console.log("Claim prize clicked")
+    setIsClaimDismissed(false)
+    claimPrize()
+  }
+
+  const handleDismissClaimError = () => {
+    setIsClaimDismissed(true)
   }
 
   const recentWinners = [
@@ -189,14 +209,31 @@ export function RafflePage() {
                     <p className="text-amber-300 font-mono font-bold text-lg">Unclaimed Prize: {unclaimedPrize} ETH</p>
                   </div>
                 </div>
-                <Button
-                  onClick={handleClaimPrize}
-                  size="lg"
-                  className="bg-gradient-to-r from-emerald-400 via-green-300 to-emerald-400 hover:from-emerald-300 hover:via-green-200 hover:to-emerald-300 text-purple-950 text-xl font-black shadow-[0_0_30px_rgba(52,211,153,1)] hover:shadow-[0_0_50px_rgba(52,211,153,1)] border-3 border-emerald-200 px-8 py-6 hover:scale-105 transition-all rounded-2xl relative overflow-hidden"
-                >
-                  <Gift className="mr-2 h-6 w-6" />
-                  CLAIM PRIZE • {unclaimedPrize} ETH
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={handleClaimPrize}
+                    disabled={isClaimPending}
+                    size="lg"
+                    className="bg-gradient-to-r from-emerald-400 via-green-300 to-emerald-400 hover:from-emerald-300 hover:via-green-200 hover:to-emerald-300 text-purple-950 text-xl font-black shadow-[0_0_30px_rgba(52,211,153,1)] hover:shadow-[0_0_50px_rgba(52,211,153,1)] border-3 border-emerald-200 px-8 py-6 hover:scale-105 transition-all rounded-2xl relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    <Gift className="mr-2 h-6 w-6" />
+                    {isClaimPending ? "CLAIMING..." : `CLAIM PRIZE • ${unclaimedPrize} ETH`}
+                  </Button>
+                  {claimErrorMessage && (
+                    <div className="bg-red-900/80 border-2 border-red-500 rounded-lg p-3 backdrop-blur-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-red-200 font-bold text-sm flex-1">{claimErrorMessage}</p>
+                        <button
+                          onClick={handleDismissClaimError}
+                          className="text-red-300 hover:text-red-100 font-black text-lg leading-none"
+                          aria-label="Dismiss error"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
