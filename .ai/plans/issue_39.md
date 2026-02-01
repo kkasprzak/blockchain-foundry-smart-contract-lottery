@@ -140,27 +140,6 @@ So that I know the round outcome.
 **Dependencies on previous stages:**
 - Stage 2 (Ponder indexer must be running and serving data)
 
-**Ponder API Configuration:**
-- **Base URL:** `http://localhost:42069`
-- **GraphQL endpoint:** `http://localhost:42069/graphql`
-- **Example query:**
-```graphql
-query {
-  rounds(orderBy: "roundNumber", orderDirection: "desc", limit: 10) {
-    items {
-      id
-      roundNumber
-      winner
-      prizePool
-      completedAt
-    }
-  }
-}
-```
-- `prizePool` is in wei (bigint) - convert to ETH with `formatEther()`
-- `winner` is `null` when no participants (address(0) case)
-- `completedAt` is block timestamp (bigint)
-
 **Definition of Done:**
 - Recent Winners panel shows real historical data from the Ponder API
 - Each winner entry shows: truncated address, prize amount
@@ -191,15 +170,13 @@ query {
 
 ## Summary Table
 
-| Stage | AC | Goal | Dependencies | Status |
-|-------|-----|------|--------------|--------|
-| 1 | AC1, AC2, AC3, AC4 | Real-time winner announcement when round completes | - | ✅ DONE |
-| 2 | AC5 (infra) | Ponder indexer stores historical round data | - | ✅ DONE |
-| 3 | AC5 | Recent Winners panel shows real historical data | Stage 2 | ✅ DONE |
+| Stage | AC | Goal | Dependencies |
+|-------|-----|------|--------------|
+| 1 | AC1, AC2, AC3, AC4 | Real-time winner announcement when round completes | - |
+| 2 | AC5 (infra) | Ponder indexer stores historical round data | - |
+| 3 | AC5 | Recent Winners panel shows real historical data | Stage 2 |
 
 **Implementation path:** Stage 1 -> Stage 2 (can be parallel) -> Stage 3
-
-**US-016 COMPLETED**
 
 ---
 
