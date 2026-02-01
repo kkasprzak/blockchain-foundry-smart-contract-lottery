@@ -1,39 +1,33 @@
 # Incremental Delivery Plan: US-016 - View Drawing Result
 
-## User Story
+**GitHub Issue:** #39
 
-**US-016: View Drawing Result**
-
+**User Story:**
 As a player,
 I want to see who won when a drawing completes,
 So that I know the round outcome.
 
+---
+
 ## Acceptance Criteria Analysis
 
-| AC | Description | Complexity | Data Source | Dependencies |
-|----|-------------|------------|-------------|--------------|
-| AC1 | Winner address displayed when DrawCompleted event emitted | Low | Contract event (DrawCompleted) | useWatchRaffleEvents hook exists |
-| AC2 | Prize pool amount shown with winner | Low | Contract event (DrawCompleted.prize) | AC1 |
-| AC3 | "You won!" indication for current user | Low | Compare winner address with connected wallet | AC1 |
-| AC4 | "No winner - round reset" for empty rounds | Low | Contract event (winner = address(0)) | AC1 |
-| AC5 | Round history with previous winners and prizes | High | Requires indexer (Ponder) | AC1-4 complete |
+| AC | Description | Data Source | Complexity |
+|----|-------------|-------------|------------|
+| AC1 | Display winner address when DrawCompleted event is emitted | Real-time event (wagmi) | Low |
+| AC2 | Show prize pool amount the winner won | Real-time event (wagmi) | Low |
+| AC3 | Show "You won!" if connected user is the winner | Real-time event + connected address | Low |
+| AC4 | Show "No winner - round reset" when no participants | Real-time event (winner = address(0)) | Low |
+| AC5 | View round history with previous winners and prize amounts | Ponder indexer (historical data) | High |
 
-## Sorting Rationale
-
-1. **AC1 + AC2 + AC3 + AC4** are tightly coupled - they all depend on processing the DrawCompleted event and displaying results. The only difference is what text/styling is shown. These should be implemented together.
-
-2. **AC5** (Round History) is significantly more complex because:
-   - Requires setting up Ponder indexer schema for rounds
-   - Requires creating indexing handlers for DrawCompleted events
-   - Requires creating API endpoint to query historical data
-   - Requires frontend to fetch from indexer API
-   - This is a separate vertical slice that can be delivered after AC1-4
+**Sorting by complexity:**
+- AC1-4 are tightly coupled (all use same real-time DrawCompleted event) - delivered together
+- AC5 requires historical data storage infrastructure (Ponder indexer) - separate backend + frontend stages
 
 ---
 
-## Stage 1: Display Current Drawing Result
+## Stage 1: Real-time Winner Announcement (AC 1-4)
 
-**Goal:** When a drawing completes, the user sees who won and how much they won, with special indication if they are the winner.
+**Goal:** When a round completes, players immediately see who won and how much they won
 
 **AC:**
 - AC1: Given a drawing completes, when the DrawCompleted event is emitted, then the winner address is displayed
@@ -42,89 +36,135 @@ So that I know the round outcome.
 - AC4: Given no players entered the round, when the round completes, then I see "No winner - round reset"
 
 **What we're building:**
-- A result notification that appears when the DrawCompleted event is received
-- The notification shows the winner's address (truncated) and the prize amount in ETH
-- If the connected wallet is the winner, display "You won!" with celebratory styling
+- Capture winner and prize data from the DrawCompleted event (useWatchRaffleEvents already exists but does not capture the data)
+- Display winner announcement in the center of screen when a round completes
+- Show the winner's address (truncated) and the prize amount in ETH
+- If the connected wallet is the winner, display "You won!" prominently
 - If the winner address is 0x0 (no participants), display "No winner - round reset"
-- The notification should be prominent but dismissible
 
 **Dependencies on previous stages:**
-- None (useWatchRaffleEvents hook already exists and watches DrawCompleted)
+- None
 
 **Definition of Done:**
-- When a draw completes with a winner, users see the winner's address and prize amount
-- When the connected user is the winner, they see "You won!" indication
-- When a draw completes with no participants, users see "No winner - round reset"
-- The result is visible without page refresh (real-time via events)
+- When a DrawCompleted event is emitted with a winner, the winner's address and prize amount are displayed
+- When the connected user's address matches the winner, they see "You won!" prominently
+- When DrawCompleted is emitted with winner = address(0), "No winner - round reset" is displayed
+- The announcement is visible without page refresh (real-time)
 
 **Acceptance Tests:**
 
 ### MUST TEST: AC Verification
 | ID | AC | Test | Given → When → Then |
 |----|-----|------|---------------------|
-| AC-01 | AC1 | Winner address displayed on draw completion | Round in DRAWING state → Draw completes with winner → Winner address displayed (truncated format like 0x1234...5678) |
-| AC-02 | AC2 | Prize amount shown with winner | Draw completes → Check result display → Prize amount visible in ETH (e.g., "0.05 ETH") |
-| AC-03 | AC3 | Current user sees "You won!" | Connected as wallet X → Draw completes, wallet X wins → "You won!" message displayed prominently |
-| AC-04 | AC4 | No winner message for empty rounds | Round with zero entries → Draw completes → "No winner - round reset" message displayed |
+| AC-01 | AC1 | Winner address displayed | Round in drawing state → Drawing completes → Winner address visible on screen (shortened format like 0x742d...9f3a) |
+| AC-02 | AC2 | Prize amount shown | Drawing completes → Check announcement → Prize amount displayed in ETH (e.g., "0.05 ETH", not wei) |
+| AC-03 | AC3 | Current user sees "You won!" | Connected as wallet that won → Drawing completes → "You won!" message displayed prominently |
+| AC-04 | AC4 | No winner message | Round with zero entries → Drawing completes → "No winner - round reset" message displayed |
+
+### MUST TEST: Security
+| ID | Risk | Test | Given → When → Then |
+|----|------|------|---------------------|
+| SEC-01 | Wrong prize displayed | Multiple entries with different fees → Drawing completes → Displayed prize matches actual total pool (verify via blockchain) |
+| SEC-02 | Winner address mismatch | Winner announced → Cross-check with transaction logs → Displayed address matches actual winner from blockchain event |
 
 ### NICE TO HAVE
 | ID | Type | Test | Given → When → Then |
 |----|------|------|---------------------|
-| OPT-01 | UX | Result dismissible | Drawing result shown → User clicks dismiss/close → Result notification disappears |
-| OPT-02 | Edge | Multiple results | First draw completes → Second draw completes immediately → Second result replaces first (no stacking) |
-| OPT-03 | UX | Non-winner sees neutral message | Connected as wallet X → Draw completes, wallet Y wins → Winner shown without "You won!" message (neutral display) |
+| OPT-01 | UX | Result dismissible | Drawing result shown → Click dismiss/close → Announcement disappears |
+| OPT-02 | UX | Non-winner sees neutral result | Connected as non-winner wallet → Drawing completes → Winner shown without "You won!" message |
+| OPT-03 | Edge | Multiple wallets connected | Two browser tabs, different wallets → Same round completes → Only winning wallet shows "You won!" |
 
 ### Quick Checklist (2 min)
-- [ ] Winner address is truncated and readable (not full 42 characters)
-- [ ] Prize amount displays with proper decimals (not wei)
-- [ ] "You won!" styling is clearly celebratory (color/animation distinct)
-- [ ] Notification appears without page refresh
+- [ ] Announcement appears within 3 seconds of drawing completion (no page refresh)
+- [ ] Winner address shortened to readable format (not full 42 chars)
+- [ ] Prize amount readable (ETH with 2-4 decimals, not 18-digit wei)
 
 ---
 
-## Stage 2: View Round History
+## Stage 2: Ponder Indexer - Round History Backend (infrastructure for AC 5)
 
-**Goal:** Users can see a list of previous rounds with their winners and prize amounts.
+**Goal:** Historical round data is stored and accessible via API for the frontend
+
+**AC:**
+- AC5 (infrastructure): Given I want to see past rounds, when I view round history, then I see previous winners and prize amounts
+
+**What we're building:**
+- Ponder schema: `round` table storing roundNumber, winner, prizePool, completedAt
+- Event handler for DrawCompleted that processes and stores round completion data
+- API endpoint returning recent rounds (Ponder provides this via Hono)
+- Local testing workflow with Anvil to verify indexing works
+
+**Dependencies on previous stages:**
+- None (can be developed in parallel with Stage 1)
+
+**Definition of Done:**
+- Ponder schema defines `round` table with required fields
+- DrawCompleted event handler saves round data to the database
+- API endpoint returns list of recent rounds with winner and prize data
+- Indexer can be started locally with `pnpm dev` and syncs with Anvil
+
+**Acceptance Tests:**
+
+### MUST TEST: AC Verification
+| ID | AC | Test | Given → When → Then |
+|----|-----|------|---------------------|
+| AC-01 | AC5 | Event indexed to database | Indexer running, round completes with winner 0x742d... and prize 0.05 ETH → Trigger drawing on blockchain → Database contains round record with matching winner and prize |
+| AC-02 | AC5 | API returns round history | 5 completed rounds in database → Query API endpoint → Receive JSON response with 5 rounds showing winners and prizes |
+
+### NICE TO HAVE
+| ID | Type | Test | Given → When → Then |
+|----|------|------|---------------------|
+| OPT-01 | Edge | No-winner round stored | Round with zero entries completes → Query API → Round record shows zero/null winner correctly |
+| OPT-02 | UX | Rounds sorted newest first | Rounds 1,2,3 indexed → Query API → Response lists round 3, then 2, then 1 |
+| OPT-03 | Performance | Large dataset query | 100 rounds indexed → Query recent rounds → Response returns within 1 second |
+
+### Quick Checklist (2 min)
+- [ ] Indexer starts without errors
+- [ ] GraphQL playground accessible (default port)
+- [ ] Round data appears in database within 5 seconds of blockchain event
+
+---
+
+## Stage 3: Recent Winners Panel (AC 5)
+
+**Goal:** Players can see the history of past round winners with real data from the indexer
 
 **AC:**
 - AC5: Given I want to see past rounds, when I view round history, then I see previous winners and prize amounts
 
 **What we're building:**
-- Ponder indexer schema for storing completed rounds (roundNumber, winner, prize, timestamp)
-- Ponder indexing handler that processes DrawCompleted events and stores them
-- API endpoint to query completed rounds with pagination
-- Frontend component that fetches and displays historical rounds
-- Replace the hardcoded "Recent Winners" section with real data from the indexer
+- Hook `useRecentWinners` that fetches recent rounds from the Ponder API
+- Replace the hardcoded "Recent Winners" panel data with real data from the hook
+- Real-time update when a new round completes (either via polling or event trigger)
 
 **Dependencies on previous stages:**
-- Stage 1 must be complete (so we have real-time display working; history is additive)
+- Stage 2 (Ponder indexer must be running and serving data)
 
 **Definition of Done:**
-- The "Recent Winners" section shows actual historical data from past rounds
-- Each entry shows: winner address (truncated), prize amount, and relative time
-- Data is fetched from the Ponder indexer API
-- New rounds appear in history after they complete (may require page refresh or polling)
+- Recent Winners panel shows real historical data from the Ponder API
+- Each winner entry shows: truncated address, prize amount
+- Hardcoded `recentWinners` array is removed from RafflePage
+- Loading state is shown while fetching data
 
 **Acceptance Tests:**
 
 ### MUST TEST: AC Verification
 | ID | AC | Test | Given → When → Then |
 |----|-----|------|---------------------|
-| AC-01 | AC5 | Historical rounds displayed | 3 rounds completed previously → View history section → See list of 3 past rounds with winners and prizes |
+| AC-01 | AC5 | Historical rounds displayed | 5 completed rounds in indexer → Load raffle page → Recent Winners panel shows 5 entries with winner addresses and prize amounts |
 
 ### NICE TO HAVE
 | ID | Type | Test | Given → When → Then |
 |----|------|------|---------------------|
-| OPT-01 | UX | Most recent first | Multiple rounds in history → Check ordering → Newest rounds appear at top |
-| OPT-02 | UX | Relative timestamps | Round completed 5 minutes ago → View history → Shows "5 minutes ago" (not absolute timestamp) |
-| OPT-03 | Edge | Empty history | No rounds completed yet → View history → Shows appropriate empty state message |
-| OPT-04 | UX | New round appears in history | View history with 2 rounds → Draw completes (round 3) → Refresh page and see 3 rounds |
+| OPT-01 | UX | Real-time update | Viewing page with 5 winners → New drawing completes → Recent Winners panel updates to show 6 entries within 5 seconds |
+| OPT-02 | Edge | Empty history | Fresh deployment with no completed rounds → Load page → Recent Winners shows empty state or placeholder |
+| OPT-03 | UX | Loading state | API responds slowly → Load page → Loading indicator displayed while fetching data |
+| OPT-04 | Edge | API unavailable | Indexer offline → Load page → Graceful error message (not crash) |
 
 ### Quick Checklist (2 min)
-- [ ] Historical winners display truncated addresses (consistent with current result)
-- [ ] Prize amounts formatted consistently (ETH with decimals)
-- [ ] History section replaces hardcoded "Recent Winners" data
-- [ ] No console errors when fetching history data
+- [ ] All winner addresses shown in shortened format
+- [ ] Prize amounts displayed in ETH (not wei)
+- [ ] Most recent winner appears at top of list
 
 ---
 
@@ -132,28 +172,32 @@ So that I know the round outcome.
 
 | Stage | AC | Goal | Dependencies |
 |-------|-----|------|--------------|
-| 1 | AC1, AC2, AC3, AC4 | Display real-time drawing result with winner/prize/"You won!" indication | - |
-| 2 | AC5 | View round history with previous winners from indexer | Stage 1 |
+| 1 | AC1, AC2, AC3, AC4 | Real-time winner announcement when round completes | - |
+| 2 | AC5 (infra) | Ponder indexer stores historical round data | - |
+| 3 | AC5 | Recent Winners panel shows real historical data | Stage 2 |
 
-**Implementation path:** AC1+AC2+AC3+AC4 (single stage) -> AC5
+**Implementation path:** Stage 1 -> Stage 2 (can be parallel) -> Stage 3
 
 ---
 
-## Technical Context (for implementation reference)
+## Technical Context (Reference Only)
 
-### Current State
-- `useWatchRaffleEvents` hook exists and watches `DrawCompleted` event but only triggers callback, does not extract event data
-- `DrawCompleted` event contains: `roundNumber` (indexed), `winner` (indexed), `prize` (uint256)
-- Ponder indexer has placeholder schema (not yet configured for raffle events)
-- Frontend has hardcoded "Recent Winners" data
+This section provides technical context for implementers but is NOT part of the plan.
 
-### Key Implementation Notes for Stage 1
-- Need to modify `useWatchRaffleEvents` to extract and return event data (winner, prize) from `onLogs`
-- Address `0x0000000000000000000000000000000000000000` indicates no winner (empty round)
-- Winner address comparison with connected wallet should be case-insensitive
+**Current state:**
+- `useWatchRaffleEvents` hook exists but only triggers callbacks, does not capture event data
+- `DrawCompleted` event includes: `roundNumber` (indexed), `winner` (indexed), `prize` (uint256)
+- Ponder indexer has placeholder files (example schema, example config)
+- Architecture plan exists at `.ai/arch/ponder-indexer-implementation.md`
+- Frontend uses hardcoded `recentWinners` array (lines 109-122 in RafflePage.tsx)
 
-### Key Implementation Notes for Stage 2
-- Ponder schema needs: `CompletedRound` table with (id, roundNumber, winner, prize, timestamp, blockNumber)
-- Index the `DrawCompleted` event from the Raffle contract
-- API endpoint: `GET /rounds` with optional pagination
-- Consider using `@tanstack/react-query` for data fetching if not already used
+**Key event structure:**
+```solidity
+event DrawCompleted(
+  uint256 indexed roundNumber,
+  address indexed winner,
+  uint256 prize
+);
+```
+
+**Note:** When `winner` is `address(0)`, it means no players entered that round.
