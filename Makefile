@@ -190,9 +190,11 @@ complete-draw:
 	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
 	VRF_ADDR=$$(jq -r '.transactions[] | select(.contractName == "MyVRFCoordinatorV2_5Mock" or .contractName == "MyVrfCoordinatorV25Mock") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json | head -1); \
 	echo "Step 1: Performing upkeep on Raffle at $$RAFFLE_ADDR"; \
-	cast send $$RAFFLE_ADDR "performUpkeep(bytes)" "0x" --rpc-url local --account localKey --password "" > /dev/null 2>&1; \
-	echo "Step 2: Triggering VRF callback on Mock at $$VRF_ADDR"; \
-	cast send $$VRF_ADDR "fulfillRandomWords(uint256,address)" 1 $$RAFFLE_ADDR --rpc-url local --account localKey --password "" > /dev/null 2>&1; \
+	cast send $$RAFFLE_ADDR "performUpkeep(bytes)" "0x" --rpc-url local --account localKey --password "" || { echo "ERROR: performUpkeep failed"; exit 1; }; \
+	echo "Step 2: Getting request ID from RandomWordsRequested event..."; \
+	REQUEST_ID=$$(cast logs --from-block 1 --address $$VRF_ADDR --rpc-url http://localhost:8545 --json | jq -r '.[-1].data[0:66]' | xargs printf "%d"); \
+	echo "Step 3: Triggering VRF callback with request ID $$REQUEST_ID"; \
+	cast send $$VRF_ADDR "fulfillRandomWords(uint256,address)" $$REQUEST_ID $$RAFFLE_ADDR --rpc-url local --account localKey --password "" || { echo "ERROR: fulfillRandomWords failed"; exit 1; }; \
 	echo "Draw completed! Winner selected and new round started."
 
 # Check upkeep status
