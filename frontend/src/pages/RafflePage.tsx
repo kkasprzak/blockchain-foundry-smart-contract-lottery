@@ -16,6 +16,7 @@ import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
+import { useRecentWinners } from "@/hooks/useRecentWinners"
 import type { DrawingResult } from "@/types/raffle"
 
 export function RafflePage() {
@@ -27,6 +28,7 @@ export function RafflePage() {
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
 const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
   const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
+  const { winners: recentWinners, isLoading: isLoadingWinners, refetch: refetchWinners } = useRecentWinners(12)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
   const [isClaimDismissed, setIsClaimDismissed] = useState(false)
@@ -42,6 +44,7 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
       refetchPrizePool()
       refetchEntries()
       refetchUnclaimedPrize()
+      refetchWinners()
     },
   })
 
@@ -111,21 +114,6 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
   const handleDismissClaimError = () => {
     setIsClaimDismissed(true)
   }
-
-  const recentWinners = [
-    { address: "0x742d...9f3a", prize: "0.5 ETH", time: "2 hours ago" },
-    { address: "0x8c3f...4e2b", prize: "0.5 ETH", time: "1 day ago" },
-    { address: "0x1a5b...7c8d", prize: "0.5 ETH", time: "2 days ago" },
-    { address: "0x9e2a...3b1f", prize: "0.5 ETH", time: "3 days ago" },
-    { address: "0x4f8c...2d1e", prize: "0.5 ETH", time: "4 days ago" },
-    { address: "0x7b3a...6c9f", prize: "0.5 ETH", time: "5 days ago" },
-    { address: "0x2e5d...8a4b", prize: "0.5 ETH", time: "6 days ago" },
-    { address: "0x9c1f...3e7a", prize: "0.5 ETH", time: "1 week ago" },
-    { address: "0x6d4b...9f2c", prize: "0.5 ETH", time: "1 week ago" },
-    { address: "0x3a7e...5d8b", prize: "0.5 ETH", time: "2 weeks ago" },
-    { address: "0x8f2c...1a6d", prize: "0.5 ETH", time: "2 weeks ago" },
-    { address: "0x5b9e...4c3f", prize: "0.5 ETH", time: "3 weeks ago" },
-  ]
 
   const currentPlayers = [
     { address: "0x742d...9f3a", entries: 5 },
@@ -449,21 +437,27 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
             </CardTitle>
           </CardHeader>
           <CardContent className="relative z-10 max-h-[400px] overflow-y-auto">
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {recentWinners.map((winner, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-xl bg-gradient-to-r from-purple-950/80 to-violet-900/80 border-3 border-amber-600/30 p-4 hover:border-amber-400/50 transition-all hover:shadow-[0_0_20px_rgba(251,191,36,0.8)]"
-                >
-                  <span className="font-mono text-sm font-bold text-amber-300">{winner.address}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-amber-300 font-bold">Prize:</span>
-                    <span className="text-2xl font-black text-emerald-300">{winner.prize}</span>
+            {isLoadingWinners ? (
+              <div className="text-center text-amber-300 py-8 font-bold">Loading...</div>
+            ) : recentWinners.length === 0 ? (
+              <div className="text-center text-purple-300 py-8 font-bold">No winners yet</div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {recentWinners.map((winner, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-xl bg-gradient-to-r from-purple-950/80 to-violet-900/80 border-3 border-amber-600/30 p-4 hover:border-amber-400/50 transition-all hover:shadow-[0_0_20px_rgba(251,191,36,0.8)]"
+                  >
+                    <span className="font-mono text-sm font-bold text-amber-300">{winner.address}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-amber-300 font-bold">Prize:</span>
+                      <span className="text-2xl font-black text-emerald-300">{winner.prize}</span>
+                    </div>
+                    <span className="text-sm text-amber-300 font-bold">{winner.time}</span>
                   </div>
-                  <span className="text-sm text-amber-300 font-bold">{winner.time}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -189,9 +189,28 @@ complete-draw:
 	@echo "Completing full draw cycle (performUpkeep + VRF callback)..."
 	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
 	VRF_ADDR=$$(jq -r '.transactions[] | select(.contractName == "MyVRFCoordinatorV2_5Mock" or .contractName == "MyVrfCoordinatorV25Mock") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json | head -1); \
+	echo "Step 0: Checking if raffle is ready for draw..."; \
+	UPKEEP_NEEDED=$$(cast call $$RAFFLE_ADDR "checkUpkeep(bytes)(bool,bytes)" "0x" --rpc-url local | head -1); \
+	if [ "$$UPKEEP_NEEDED" != "true" ]; then \
+		echo "ERROR: Raffle not ready for draw (checkUpkeep=false)"; \
+		echo "Possible reasons:"; \
+		echo "  - Entry window still open (deadline not passed)"; \
+		echo "  - Raffle already in DRAWING state"; \
+		DEADLINE=$$(cast call $$RAFFLE_ADDR "getEntryDeadline()(uint256)" --rpc-url local); \
+		CURRENT=$$(cast block latest --field timestamp --rpc-url local); \
+		echo "  Entry deadline: $$DEADLINE, Current time: $$CURRENT"; \
+		exit 1; \
+	fi; \
+	REQUESTS_BEFORE=$$(cast logs --from-block 1 --address $$VRF_ADDR --rpc-url http://localhost:8545 --json | jq 'length'); \
 	echo "Step 1: Performing upkeep on Raffle at $$RAFFLE_ADDR"; \
 	cast send $$RAFFLE_ADDR "performUpkeep(bytes)" "0x" --rpc-url local --account localKey --password "" || { echo "ERROR: performUpkeep failed"; exit 1; }; \
-	echo "Step 2: Getting request ID from RandomWordsRequested event..."; \
+	echo "Step 2: Verifying VRF request was created..."; \
+	REQUESTS_AFTER=$$(cast logs --from-block 1 --address $$VRF_ADDR --rpc-url http://localhost:8545 --json | jq 'length'); \
+	if [ "$$REQUESTS_AFTER" -le "$$REQUESTS_BEFORE" ]; then \
+		echo "No VRF request created - round completed without players (no VRF needed)"; \
+		echo "Draw completed! New round started (no winner - 0 players)."; \
+		exit 0; \
+	fi; \
 	REQUEST_ID=$$(cast logs --from-block 1 --address $$VRF_ADDR --rpc-url http://localhost:8545 --json | jq -r '.[-1].data[0:66]' | xargs printf "%d"); \
 	echo "Step 3: Triggering VRF callback with request ID $$REQUEST_ID"; \
 	cast send $$VRF_ADDR "fulfillRandomWords(uint256,address)" $$REQUEST_ID $$RAFFLE_ADDR --rpc-url local --account localKey --password "" || { echo "ERROR: fulfillRandomWords failed"; exit 1; }; \
