@@ -17,6 +17,7 @@ import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
 import { useRecentWinners } from "@/hooks/useRecentWinners"
+import { useLiveRecentWinners } from "@/hooks/useLiveRecentWinners"
 import type { DrawingResult } from "@/types/raffle"
 
 export function RafflePage() {
@@ -28,7 +29,20 @@ export function RafflePage() {
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
 const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
   const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
-  const { winners: recentWinners, isLoading: isLoadingWinners, refetch: refetchWinners } = useRecentWinners(12)
+
+  const sseResult = useLiveRecentWinners(12)
+  const graphqlResult = useRecentWinners({
+    limit: 12,
+    enabled: sseResult.isServiceUnavailable,
+  })
+
+  const recentWinners = sseResult.isServiceUnavailable
+    ? graphqlResult.winners
+    : sseResult.winners
+
+  const isLoadingWinners = sseResult.isServiceUnavailable
+    ? graphqlResult.isLoading
+    : sseResult.isLoading
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
   const [isClaimDismissed, setIsClaimDismissed] = useState(false)
@@ -44,7 +58,6 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
       refetchPrizePool()
       refetchEntries()
       refetchUnclaimedPrize()
-      refetchWinners()
     },
   })
 
@@ -437,10 +450,10 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
             </CardTitle>
           </CardHeader>
           <CardContent className="relative z-10 max-h-[400px] overflow-y-auto">
-            {isLoadingWinners ? (
+            {isLoadingWinners && recentWinners.length === 0 ? (
               <div className="text-center text-amber-300 py-8 font-bold">Loading...</div>
             ) : recentWinners.length === 0 ? (
-              <div className="text-center text-purple-300 py-8 font-bold">No winners yet</div>
+              <div className="text-center text-purple-300 py-8 font-bold">No completed rounds yet</div>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {recentWinners.map((winner, i) => (

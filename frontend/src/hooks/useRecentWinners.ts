@@ -33,9 +33,15 @@ const RECENT_WINNERS_QUERY = `
   }
 `
 
-export function useRecentWinners(limit: number = 12) {
+interface UseRecentWinnersOptions {
+  limit?: number;
+  enabled?: boolean;
+}
+
+export function useRecentWinners(options?: UseRecentWinnersOptions) {
+  const { limit = 12, enabled = true } = options ?? {};
   const [winners, setWinners] = useState<RecentWinner[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(enabled)
   const [error, setError] = useState<Error | null>(null)
 
   const fetchWinners = useCallback(async () => {
@@ -85,8 +91,10 @@ export function useRecentWinners(limit: number = 12) {
   }, [limit])
 
   useEffect(() => {
-    fetchWinners()
-  }, [fetchWinners])
+    if (enabled) {
+      fetchWinners()
+    }
+  }, [fetchWinners, enabled])
 
   const refetchWithDelay = useCallback(
     (delayMs: number = 2000) => {
