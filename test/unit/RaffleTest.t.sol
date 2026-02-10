@@ -684,6 +684,86 @@ contract RaffleTest is Test {
         assertEq(raffle.getUnclaimedPrize(player1), expectedPrize);
     }
 
+    function testCheckUpkeepReturnsTrueAfterVrfTimeout() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 300;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+        _startDraw(raffle);
+
+        // Before timeout, checkUpkeep should return false
+        (bool upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
+        assertFalse(upkeepNeeded, "Recovery should not be possible before timeout");
+
+        // After timeout, checkUpkeep should return true
+        _waitForDrawTime(5 minutes);
+        (upkeepNeeded,) = raffle.checkUpkeep(EMPTY_CHECK_DATA);
+        assertTrue(upkeepNeeded, "Recovery should be possible after timeout");
+    }
+
+    function testRecoveryRetriesSameRoundNotNewRound() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 300;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+        _startDraw(raffle);
+
+        // Wait for timeout and perform recovery
+        _waitForDrawTime(5 minutes);
+
+        // Recovery should emit DrawRequested with round 1 (not round 2)
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit DrawRequested(1);
+        _startDraw(raffle);
+    }
+
+    function testRecoveryCompletesDrawSuccessfully() public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 300;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+
+        _waitForDrawTime(interval + 1);
+        _startDraw(raffle);
+
+        // Wait for timeout and perform recovery
+        _waitForDrawTime(5 minutes);
+        vm.recordLogs();
+        _startDraw(raffle);
+
+        // Fulfill VRF callback and verify draw completes with round 1
+        uint256 requestId = vm.getRecordedLogs().getVrfRequestId();
+        uint256 expectedPrize = entranceFee * 2;
+
+        vm.recordLogs();
+        vm.expectEmit(true, true, false, true, address(raffle));
+        emit DrawCompleted(1, player1, expectedPrize);
+        vrfCoordinatorMock.simulateVrfCoordinatorCallback(requestId, address(raffle), FIRST_ENTRY_WINS);
+
+        // Verify winner received prize
+        address winner = vm.getRecordedLogs().getWinner();
+        assertEq(raffle.getUnclaimedPrize(winner), expectedPrize);
+    }
+
     function _createValidRaffle() private returns (Raffle) {
         return _createRaffleWithEntranceFeeAndInterval(1 ether, 1);
     }
