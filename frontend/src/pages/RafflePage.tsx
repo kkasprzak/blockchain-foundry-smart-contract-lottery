@@ -16,7 +16,6 @@ import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
-import { useRecentWinners } from "@/hooks/useRecentWinners"
 import { useLiveRecentWinners } from "@/hooks/useLiveRecentWinners"
 import type { DrawingResult } from "@/types/raffle"
 
@@ -30,19 +29,7 @@ export function RafflePage() {
 const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
   const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
 
-  const sseResult = useLiveRecentWinners({ limit: 12 })
-  const graphqlResult = useRecentWinners({
-    limit: 12,
-    enabled: sseResult.isServiceUnavailable,
-  })
-
-  const recentWinners = sseResult.isServiceUnavailable
-    ? graphqlResult.winners
-    : sseResult.winners
-
-  const isLoadingWinners = sseResult.isServiceUnavailable
-    ? graphqlResult.isLoading
-    : sseResult.isLoading
+  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
   const [isClaimDismissed, setIsClaimDismissed] = useState(false)
