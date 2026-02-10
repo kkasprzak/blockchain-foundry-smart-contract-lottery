@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Trophy, Clock, Sparkles, Coins, Gift, Ticket } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
 import { DrawCompletedAnnouncement } from "@/components/DrawCompletedAnnouncement"
+import { WrongNetworkBanner } from "@/components/WrongNetworkBanner"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useEnterRaffle } from "@/hooks/useEnterRaffle"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
@@ -18,12 +19,14 @@ import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
 import { useLiveRecentWinners } from "@/hooks/useLiveRecentWinners"
 import type { DrawingResult } from "@/types/raffle"
+import { TARGET_CHAIN_ID } from "@/config/env"
+import { sepolia, anvil } from "wagmi/chains"
 
 export function RafflePage() {
-  const { isConnected, address } = useAccount()
+  const { isConnected, address, chain } = useAccount()
   const { entranceFee, entranceFeeRaw, isLoading: isLoadingFee } = useEntranceFee()
   const { enterRaffle, isPending, isError, error } = useEnterRaffle()
-  const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
+  const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime, refetch: refetchDeadline } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
 const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
@@ -45,6 +48,7 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
       refetchPrizePool()
       refetchEntries()
       refetchUnclaimedPrize()
+      refetchDeadline()
     },
   })
 
@@ -133,8 +137,19 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
     { address: "0x4a8d...3c7e", entries: 1 },
   ]
 
+  const isWrongNetwork = isConnected && chain && chain.id !== TARGET_CHAIN_ID
+  const targetChain = TARGET_CHAIN_ID === sepolia.id ? sepolia : anvil
+  const targetChainName = targetChain.name
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-950 via-violet-950 to-purple-900 relative overflow-hidden">
+      {isWrongNetwork && chain && (
+        <WrongNetworkBanner
+          currentChainId={chain.id}
+          targetChainName={targetChainName}
+        />
+      )}
+
       {/* Animated background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,0,255,0.3),transparent_50%)]"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,215,0,0.15),transparent_40%)]"></div>

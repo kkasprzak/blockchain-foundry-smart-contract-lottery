@@ -9,7 +9,7 @@ interface TimeRemaining {
 }
 
 export function useRaffleTimeRemaining() {
-  const { data: deadline, isLoading } = useReadContract({
+  const { data: deadline, isLoading, refetch } = useReadContract({
     address: RAFFLE_ADDRESS,
     abi: RAFFLE_ABI,
     functionName: "getEntryDeadline",
@@ -65,5 +65,6 @@ export function useRaffleTimeRemaining() {
     timeLeft,
     isEntryWindowClosed,
     isLoading,
+    refetch,
   };
 }

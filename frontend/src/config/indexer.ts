@@ -1,3 +1,5 @@
-export const INDEXER_URL = import.meta.env.VITE_INDEXER_URL ?? "http://localhost:42069";
+import { env } from "./env";
 
-export const MOCK_SSE = import.meta.env.VITE_MOCK_SSE === "true";
+export const INDEXER_URL = env.VITE_INDEXER_URL;
+
+export const MOCK_SSE = env.VITE_MOCK_SSE === "true";
