@@ -1,55 +1,26 @@
-import { useState } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { RAFFLE_ABI, RAFFLE_ADDRESS } from "@/config/contracts";
+import { useContractWrite } from "./useContractWrite";
 
 export function useEnterRaffle() {
-  const {
-    writeContractAsync,
-    isPending: isWritePending,
-    reset: resetWrite,
-  } = useWriteContract();
-
-  const [writeError, setWriteError] = useState<Error | null>(null);
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
-
-  const {
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-    isError: isReceiptError,
-    error: receiptError,
-  } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
+  const { write, isPending, isSuccess, isError, error, hash } =
+    useContractWrite({
+      address: RAFFLE_ADDRESS,
+      abi: RAFFLE_ABI,
+    });
 
   const enterRaffle = async (entranceFeeWei: bigint) => {
-    setWriteError(null);
-    setTxHash(undefined);
-    resetWrite();
-
-    try {
-      const hash = await writeContractAsync({
-        address: RAFFLE_ADDRESS,
-        abi: RAFFLE_ABI,
-        functionName: "enterRaffle",
-        value: entranceFeeWei,
-      });
-
-      setTxHash(hash);
-    } catch (err) {
-      setWriteError(err instanceof Error ? err : new Error(String(err)));
-    }
+    await write({
+      functionName: "enterRaffle",
+      value: entranceFeeWei,
+    });
   };
-
-  const isPending = isWritePending || isConfirming;
-  const isError = !!writeError || isReceiptError;
-  const error = writeError || receiptError || null;
 
   return {
     enterRaffle,
     isPending,
-    isSuccess: isConfirmed,
+    isSuccess,
     isError,
     error,
-    hash: txHash,
+    hash,
   };
 }

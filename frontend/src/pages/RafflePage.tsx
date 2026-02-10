@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
 import { useLiveRecentWinners } from "@/hooks/useLiveRecentWinners"
+import { useDismissableError } from "@/hooks/useDismissableError"
 import type { DrawingResult } from "@/types/raffle"
 import { TARGET_CHAIN_ID } from "@/config/env"
 import { sepolia, anvil } from "wagmi/chains"
@@ -34,9 +35,19 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
 
   const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
   const [isButtonHovered, setIsButtonHovered] = useState(false)
-  const [isDismissed, setIsDismissed] = useState(false)
-  const [isClaimDismissed, setIsClaimDismissed] = useState(false)
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
+
+  const {
+    errorMessage,
+    handleDismiss: handleDismissError,
+    resetDismissed: resetEnterError,
+  } = useDismissableError(isError, error)
+
+  const {
+    errorMessage: claimErrorMessage,
+    handleDismiss: handleDismissClaimError,
+    resetDismissed: resetClaimError,
+  } = useDismissableError(isClaimError, claimError)
 
   useWatchRaffleEvents({
     onRaffleEntered: () => {
@@ -60,63 +71,16 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
     }
   }, [isClaimSuccess, refetchUnclaimedPrize])
 
-  const parseErrorMessage = (error: Error): string => {
-    const errorString = error.message.toLowerCase()
-
-    if (errorString.includes("user rejected") || errorString.includes("user denied")) {
-      return "Transaction rejected"
-    }
-    if (errorString.includes("insufficient funds")) {
-      return "Insufficient funds"
-    }
-    if (errorString.includes("raffle__entrywindowisclosed") || errorString.includes("entry window closed")) {
-      return "Entry window closed"
-    }
-    if (errorString.includes("raffle__invalidentrancefee") || errorString.includes("entrance fee")) {
-      return "Invalid entrance fee"
-    }
-    if (errorString.includes("raffle__drawinginprogress")) {
-      return "Drawing in progress"
-    }
-    if (errorString.includes("raffle__raffleisnotdrawing")) {
-      return "Raffle not in drawing state"
-    }
-
-    return "Transaction failed. Please try again."
-  }
-
-  const errorMessage = useMemo(() => {
-    if (isError && error && !isDismissed) {
-      return parseErrorMessage(error)
-    }
-    return null
-  }, [isError, error, isDismissed])
-
-  const claimErrorMessage = useMemo(() => {
-    if (isClaimError && claimError && !isClaimDismissed) {
-      return parseErrorMessage(claimError)
-    }
-    return null
-  }, [isClaimError, claimError, isClaimDismissed])
-
   const handleEnterRaffle = () => {
-    setIsDismissed(false)
+    resetEnterError()
     if (entranceFeeRaw) {
       enterRaffle(entranceFeeRaw)
     }
   }
 
-  const handleDismissError = () => {
-    setIsDismissed(true)
-  }
-
   const handleClaimPrize = () => {
-    setIsClaimDismissed(false)
+    resetClaimError()
     claimPrize()
-  }
-
-  const handleDismissClaimError = () => {
-    setIsClaimDismissed(true)
   }
 
   const currentPlayers = [
