@@ -32,6 +32,10 @@ const MOCK_WINNERS: RecentWinner[] = [
   },
 ];
 
+export interface UseLiveRecentWinnersOptions {
+  limit?: number;
+}
+
 export interface UseLiveRecentWinnersResult {
   winners: RecentWinner[];
   isLoading: boolean;
@@ -52,7 +56,9 @@ function transformRound(raw: RoundFromPonder): RecentWinner {
   };
 }
 
-export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersResult {
+export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): UseLiveRecentWinnersResult {
+  const { limit = 12 } = options ?? {};
+
   // Use existing GraphQL hook for initial data
   const graphqlResult = useRecentWinners({ limit, enabled: !MOCK_SSE });
 
@@ -77,11 +83,9 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
 
   const startSSEConnection = useCallback(async () => {
     if (MOCK_SSE) return;
-    if (isManualCloseRef.current) return; // Check before starting
+    if (isManualCloseRef.current) return;
 
     try {
-      console.log("🔌 Starting SSE connection for live updates...");
-
       // Create fresh client for each connection
       const client = createClient(`${INDEXER_URL}/sql`, { schema });
 
@@ -100,7 +104,6 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
           if (isManualCloseRef.current) return;
 
           if (isFirstMessageRef.current) {
-            console.log("✅ Connected to Ponder SSE - listening for new winners");
             isFirstMessageRef.current = false;
           }
 
@@ -117,7 +120,6 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
             .filter((r) => r.winner !== null)
             .map(transformRound);
 
-          console.log(`🎉 SSE update received: ${transformed.length} winners`);
           setWinners(transformed);
         },
 
@@ -128,7 +130,7 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
           const nextAttempt = reconnectAttemptRef.current + 1;
           reconnectAttemptRef.current = nextAttempt;
 
-          console.error(`⚠️  SSE connection interrupted (attempt #${nextAttempt}):`, err);
+          console.error("SSE connection error:", err);
           setError(err instanceof Error ? err : new Error(String(err)));
           setIsConnected(false);
 
@@ -144,7 +146,6 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
 
           // Check if we exceeded max retry attempts
           if (nextAttempt > MAX_RETRY_ATTEMPTS) {
-            console.error("💀 Exceeded max reconnection attempts");
             setIsServiceUnavailable(true);
             setIsReconnecting(false);
             return;
@@ -158,7 +159,6 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
           }
 
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log(`🔄 Reconnecting... (attempt #${nextAttempt})`);
             startSSEConnection();
           }, RECONNECT_DELAY);
         }
@@ -173,7 +173,7 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
       const nextAttempt = reconnectAttemptRef.current + 1;
       reconnectAttemptRef.current = nextAttempt;
 
-      console.error(`❌ Failed to start SSE connection (attempt #${nextAttempt}):`, err);
+      console.error("SSE connection failed:", err);
 
       // Only update state if still mounted
       if (!isManualCloseRef.current) {
@@ -181,7 +181,6 @@ export function useLiveRecentWinners(limit: number = 12): UseLiveRecentWinnersRe
         setIsConnected(false);
 
         if (nextAttempt > MAX_RETRY_ATTEMPTS) {
-          console.error("💀 Exceeded max reconnection attempts");
           setIsServiceUnavailable(true);
           setIsReconnecting(false);
           return;

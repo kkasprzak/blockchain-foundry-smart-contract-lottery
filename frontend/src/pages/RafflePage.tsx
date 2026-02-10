@@ -30,7 +30,7 @@ export function RafflePage() {
 const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
   const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
 
-  const sseResult = useLiveRecentWinners(12)
+  const sseResult = useLiveRecentWinners({ limit: 12 })
   const graphqlResult = useRecentWinners({
     limit: 12,
     enabled: sseResult.isServiceUnavailable,
