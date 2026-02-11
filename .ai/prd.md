@@ -290,7 +290,7 @@ The Lottery Operator is the person or entity responsible for deploying, configur
   - Given no players entered the round, when the round completes, then I see "No winner - round reset"
   - Given I want to see past rounds, when I view round history, then I see previous winners and prize amounts
 
-- **US-017: Claim Prize** [READY]
+- **US-017: Claim Prize** [DONE]
 
   As a winner,
   I want to claim my prize,

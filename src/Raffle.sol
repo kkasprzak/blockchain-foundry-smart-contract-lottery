@@ -22,6 +22,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     address private constant NO_WINNER = address(0);
     uint256 private constant NO_PRIZE = 0;
     bytes private constant EMPTY_PERFORM_DATA = "";
+    uint256 private constant VRF_TIMEOUT = 5 minutes;
 
     uint256 private immutable ENTRANCE_FEE;
     uint256 private immutable INTERVAL;
@@ -35,6 +36,8 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     RaffleState private raffleState;
     uint256 private roundNumber;
     uint256 private prizePool;
+    uint256 private vrfRequestTimestamp;
+
     mapping(address => uint256) private unclaimedPrizes;
 
     /// @notice Emitted when a player enters the raffle
@@ -133,6 +136,13 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         external
         override
     {
+        if (_isVrfTimedOut()) {
+            vrfRequestTimestamp = block.timestamp;
+            requestId = _requestRandomWords();
+            emit DrawRequested(roundNumber);
+            return;
+        }
+
         if (_isEntryWindowOpen() || _isRaffleInState(RaffleState.DRAWING)) {
             revert Raffle__DrawingNotAllowed();
         }
@@ -145,6 +155,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         }
 
         raffleState = RaffleState.DRAWING;
+        vrfRequestTimestamp = block.timestamp;
         requestId = _requestRandomWords();
         emit DrawRequested(roundNumber);
     }
@@ -211,7 +222,9 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         override
         returns (bool upkeepNeeded, bytes memory performData)
     {
-        return (_isEntryWindowClosed() && _isRaffleInState(RaffleState.OPEN), EMPTY_PERFORM_DATA);
+        bool normalCondition = _isEntryWindowClosed() && _isRaffleInState(RaffleState.OPEN);
+        bool recoveryCondition = _isVrfTimedOut();
+        return (normalCondition || recoveryCondition, EMPTY_PERFORM_DATA);
     }
 
     // slither-disable-next-line reentrancy-eth
@@ -275,5 +288,9 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     function _isRaffleInState(RaffleState state) private view returns (bool) {
         return raffleState == state;
+    }
+
+    function _isVrfTimedOut() private view returns (bool) {
+        return _isRaffleInState(RaffleState.DRAWING) && block.timestamp >= vrfRequestTimestamp + VRF_TIMEOUT;
     }
 }

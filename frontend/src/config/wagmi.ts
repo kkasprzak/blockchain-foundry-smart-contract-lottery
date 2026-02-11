@@ -1,12 +1,13 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { sepolia, anvil } from 'wagmi/chains';
 import { http, webSocket, fallback } from 'viem';
+import { env } from './env';
 
-const alchemyApiKey = import.meta.env.VITE_ALCHEMY_API_KEY;
+const alchemyApiKey = env.VITE_ALCHEMY_API_KEY;
 
 export const config = getDefaultConfig({
   appName: 'Raffle Wheel of Fortune',
-  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'development',
+  projectId: env.VITE_WALLETCONNECT_PROJECT_ID,
   chains: [sepolia, anvil],
   transports: {
     [sepolia.id]: fallback([

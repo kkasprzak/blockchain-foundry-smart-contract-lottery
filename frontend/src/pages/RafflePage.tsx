@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Trophy, Clock, Sparkles, Coins, Gift, Ticket } from "lucide-react"
 import { WheelPlaceholder } from "@/components/WheelPlaceholder"
+import { DrawCompletedAnnouncement } from "@/components/DrawCompletedAnnouncement"
+import { WrongNetworkBanner } from "@/components/WrongNetworkBanner"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useEnterRaffle } from "@/hooks/useEnterRaffle"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
@@ -15,31 +17,53 @@ import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
+import { useLiveRecentWinners } from "@/hooks/useLiveRecentWinners"
+import { useDismissableError } from "@/hooks/useDismissableError"
+import type { DrawingResult } from "@/types/raffle"
+import { TARGET_CHAIN_ID } from "@/config/env"
+import { sepolia, anvil } from "wagmi/chains"
 
 export function RafflePage() {
-  const { isConnected, address } = useAccount()
+  const { isConnected, address, chain } = useAccount()
   const { entranceFee, entranceFeeRaw, isLoading: isLoadingFee } = useEntranceFee()
   const { enterRaffle, isPending, isError, error } = useEnterRaffle()
-  const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime } = useRaffleTimeRemaining()
+  const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime, refetch: refetchDeadline } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
 const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
   const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
+
+  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
   const [isButtonHovered, setIsButtonHovered] = useState(false)
-  const [isDismissed, setIsDismissed] = useState(false)
-  const [isClaimDismissed, setIsClaimDismissed] = useState(false)
+  const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
+
+  const {
+    errorMessage,
+    handleDismiss: handleDismissError,
+    resetDismissed: resetEnterError,
+  } = useDismissableError(isError, error)
+
+  const {
+    errorMessage: claimErrorMessage,
+    handleDismiss: handleDismissClaimError,
+    resetDismissed: resetClaimError,
+  } = useDismissableError(isClaimError, claimError)
 
   useWatchRaffleEvents({
     onRaffleEntered: () => {
       refetchPrizePool()
       refetchEntries()
     },
-    onDrawCompleted: () => {
+    onDrawCompleted: (result) => {
+      setDrawingResult(result)
       refetchPrizePool()
       refetchEntries()
-refetchUnclaimedPrize()
+      refetchUnclaimedPrize()
+      refetchDeadline()
     },
   })
+
+  const isCurrentUserWinner = drawingResult?.winner.toLowerCase() === address?.toLowerCase()
 
   useEffect(() => {
     if (isClaimSuccess) {
@@ -47,79 +71,17 @@ refetchUnclaimedPrize()
     }
   }, [isClaimSuccess, refetchUnclaimedPrize])
 
-  const parseErrorMessage = (error: Error): string => {
-    const errorString = error.message.toLowerCase()
-
-    if (errorString.includes("user rejected") || errorString.includes("user denied")) {
-      return "Transaction rejected"
-    }
-    if (errorString.includes("insufficient funds")) {
-      return "Insufficient funds"
-    }
-    if (errorString.includes("raffle__entrywindowisclosed") || errorString.includes("entry window closed")) {
-      return "Entry window closed"
-    }
-    if (errorString.includes("raffle__invalidentrancefee") || errorString.includes("entrance fee")) {
-      return "Invalid entrance fee"
-    }
-    if (errorString.includes("raffle__drawinginprogress")) {
-      return "Drawing in progress"
-    }
-    if (errorString.includes("raffle__raffleisnotdrawing")) {
-      return "Raffle not in drawing state"
-    }
-
-    return "Transaction failed. Please try again."
-  }
-
-  const errorMessage = useMemo(() => {
-    if (isError && error && !isDismissed) {
-      return parseErrorMessage(error)
-    }
-    return null
-  }, [isError, error, isDismissed])
-
-  const claimErrorMessage = useMemo(() => {
-    if (isClaimError && claimError && !isClaimDismissed) {
-      return parseErrorMessage(claimError)
-    }
-    return null
-  }, [isClaimError, claimError, isClaimDismissed])
-
   const handleEnterRaffle = () => {
-    setIsDismissed(false)
+    resetEnterError()
     if (entranceFeeRaw) {
       enterRaffle(entranceFeeRaw)
     }
   }
 
-  const handleDismissError = () => {
-    setIsDismissed(true)
-  }
-
   const handleClaimPrize = () => {
-    setIsClaimDismissed(false)
+    resetClaimError()
     claimPrize()
   }
-
-  const handleDismissClaimError = () => {
-    setIsClaimDismissed(true)
-  }
-
-  const recentWinners = [
-    { address: "0x742d...9f3a", prize: "0.5 ETH", time: "2 hours ago" },
-    { address: "0x8c3f...4e2b", prize: "0.5 ETH", time: "1 day ago" },
-    { address: "0x1a5b...7c8d", prize: "0.5 ETH", time: "2 days ago" },
-    { address: "0x9e2a...3b1f", prize: "0.5 ETH", time: "3 days ago" },
-    { address: "0x4f8c...2d1e", prize: "0.5 ETH", time: "4 days ago" },
-    { address: "0x7b3a...6c9f", prize: "0.5 ETH", time: "5 days ago" },
-    { address: "0x2e5d...8a4b", prize: "0.5 ETH", time: "6 days ago" },
-    { address: "0x9c1f...3e7a", prize: "0.5 ETH", time: "1 week ago" },
-    { address: "0x6d4b...9f2c", prize: "0.5 ETH", time: "1 week ago" },
-    { address: "0x3a7e...5d8b", prize: "0.5 ETH", time: "2 weeks ago" },
-    { address: "0x8f2c...1a6d", prize: "0.5 ETH", time: "2 weeks ago" },
-    { address: "0x5b9e...4c3f", prize: "0.5 ETH", time: "3 weeks ago" },
-  ]
 
   const currentPlayers = [
     { address: "0x742d...9f3a", entries: 5 },
@@ -139,8 +101,19 @@ refetchUnclaimedPrize()
     { address: "0x4a8d...3c7e", entries: 1 },
   ]
 
+  const isWrongNetwork = isConnected && chain && chain.id !== TARGET_CHAIN_ID
+  const targetChain = TARGET_CHAIN_ID === sepolia.id ? sepolia : anvil
+  const targetChainName = targetChain.name
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-950 via-violet-950 to-purple-900 relative overflow-hidden">
+      {isWrongNetwork && chain && (
+        <WrongNetworkBanner
+          currentChainId={chain.id}
+          targetChainName={targetChainName}
+        />
+      )}
+
       {/* Animated background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,0,255,0.3),transparent_50%)]"></div>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,215,0,0.15),transparent_40%)]"></div>
@@ -237,6 +210,15 @@ refetchUnclaimedPrize()
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {drawingResult && (
+          <DrawCompletedAnnouncement
+            winner={drawingResult.winner}
+            prizeFormatted={drawingResult.prizeFormatted}
+            isCurrentUserWinner={isCurrentUserWinner ?? false}
+            onDismiss={() => setDrawingResult(null)}
+          />
         )}
 
         <div className="grid gap-6 lg:grid-cols-12">
@@ -434,21 +416,27 @@ refetchUnclaimedPrize()
             </CardTitle>
           </CardHeader>
           <CardContent className="relative z-10 max-h-[400px] overflow-y-auto">
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {recentWinners.map((winner, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-xl bg-gradient-to-r from-purple-950/80 to-violet-900/80 border-3 border-amber-600/30 p-4 hover:border-amber-400/50 transition-all hover:shadow-[0_0_20px_rgba(251,191,36,0.8)]"
-                >
-                  <span className="font-mono text-sm font-bold text-amber-300">{winner.address}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-amber-300 font-bold">Prize:</span>
-                    <span className="text-2xl font-black text-emerald-300">{winner.prize}</span>
+            {isLoadingWinners && recentWinners.length === 0 ? (
+              <div className="text-center text-amber-300 py-8 font-bold">Loading...</div>
+            ) : recentWinners.length === 0 ? (
+              <div className="text-center text-purple-300 py-8 font-bold">No completed rounds yet</div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {recentWinners.map((winner, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-xl bg-gradient-to-r from-purple-950/80 to-violet-900/80 border-3 border-amber-600/30 p-4 hover:border-amber-400/50 transition-all hover:shadow-[0_0_20px_rgba(251,191,36,0.8)]"
+                  >
+                    <span className="font-mono text-sm font-bold text-amber-300">{winner.address}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-amber-300 font-bold">Prize:</span>
+                      <span className="text-2xl font-black text-emerald-300">{winner.prize}</span>
+                    </div>
+                    <span className="text-sm text-amber-300 font-bold">{winner.time}</span>
                   </div>
-                  <span className="text-sm text-amber-300 font-bold">{winner.time}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

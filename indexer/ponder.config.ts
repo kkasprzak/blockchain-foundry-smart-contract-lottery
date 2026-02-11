@@ -1,20 +1,21 @@
 import { createConfig } from "ponder";
 
-import { ExampleContractAbi } from "./abis/ExampleContractAbi";
+import { RaffleAbi } from "./abis/RaffleAbi";
 
 export default createConfig({
   chains: {
-    mainnet: {
-      id: 1,
-      rpc: process.env.PONDER_RPC_URL_1!,
+    anvil: {
+      id: 31337,
+      rpc: "http://127.0.0.1:8545",
+      disableCache: true,
     },
   },
   contracts: {
-    ExampleContract: {
-      chain: "mainnet",
-      abi: ExampleContractAbi,
-      address: "0x0000000000000000000000000000000000000000",
-      startBlock: 1234567,
+    Raffle: {
+      chain: "anvil",
+      abi: RaffleAbi,
+      address: "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+      startBlock: 0,
     },
   },
 });
