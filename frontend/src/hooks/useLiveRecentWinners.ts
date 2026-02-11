@@ -73,10 +73,12 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
   const isManualCloseRef = useRef(false);
   const isFirstMessageRef = useRef(true);
   const reconnectAttemptRef = useRef(0);
+  const startSSEConnectionRef = useRef<(() => Promise<void>) | null>(null);
 
-  // Sync GraphQL data to local state when it loads
+  // Sync GraphQL data to local state when it loads (one-time initialization)
   useEffect(() => {
     if (graphqlResult.winners.length > 0 && winners.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWinners(graphqlResult.winners);
     }
   }, [graphqlResult.winners, winners.length]);
@@ -139,7 +141,7 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
             try {
               unsubscribeRef.current();
               unsubscribeRef.current = null;
-            } catch (e) {
+            } catch {
               // Ignore cleanup errors
             }
           }
@@ -159,7 +161,7 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
           }
 
           reconnectTimeoutRef.current = setTimeout(() => {
-            startSSEConnection();
+            startSSEConnectionRef.current?.();
           }, RECONNECT_DELAY);
         }
       );
@@ -195,11 +197,16 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
 
       if (!isManualCloseRef.current) {
         reconnectTimeoutRef.current = setTimeout(() => {
-          startSSEConnection();
+          startSSEConnectionRef.current?.();
         }, RECONNECT_DELAY);
       }
     }
   }, [limit]);
+
+  // Store the function in ref for recursive calls
+  useEffect(() => {
+    startSSEConnectionRef.current = startSSEConnection;
+  }, [startSSEConnection]);
 
   // Manual reconnect function for user-triggered reconnection
   const reconnect = useCallback(() => {
@@ -210,7 +217,7 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
       try {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
@@ -228,6 +235,7 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
 
     isManualCloseRef.current = false;
     isFirstMessageRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     startSSEConnection();
 
     return () => {
@@ -235,7 +243,7 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
       if (unsubscribeRef.current) {
         try {
           unsubscribeRef.current();
-        } catch (e) {
+        } catch {
           // Ignore
         }
       }
