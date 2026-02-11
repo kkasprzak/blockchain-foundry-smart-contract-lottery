@@ -658,6 +658,37 @@ contract RaffleTest is Test {
         assertEq(raffle.getEntriesCount(), 3, "Entries count should be equal to the number of entries");
     }
 
+    function testGetPlayerEntryCountReturnsZeroForPlayerWhoHasNotEntered() public {
+        Raffle raffle = _createValidRaffle();
+        address player = makeAddr("player");
+
+        assertEq(raffle.getPlayerEntryCount(player), 0);
+    }
+
+    function testGetPlayerEntryCountReturnsOneAfterSingleEntry() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        assertEq(raffle.getPlayerEntryCount(player), 1);
+    }
+
+    function testGetPlayerEntryCountReturnsThreeAfterThreeEntries() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        assertEq(raffle.getPlayerEntryCount(player), 3);
+    }
+
     function testGetUnclaimedPrizeReturnsZeroForPlayerWithNoPrize() public {
         Raffle raffle = _createValidRaffle();
         address player = makeAddr("player");

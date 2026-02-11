@@ -16,6 +16,7 @@ import { usePrizePool } from "@/hooks/usePrizePool"
 import { useEntriesCount } from "@/hooks/useEntriesCount"
 import { useWatchRaffleEvents } from "@/hooks/useWatchRaffleEvents"
 import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
+import { usePlayerEntryCount } from "@/hooks/usePlayerEntryCount"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
 import { useLiveRecentWinners } from "@/hooks/useLiveRecentWinners"
 import { useDismissableError } from "@/hooks/useDismissableError"
@@ -31,6 +32,7 @@ export function RafflePage() {
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
 const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
+  const { playerEntryCount, refetch: refetchPlayerEntryCount } = usePlayerEntryCount(address)
   const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
 
   const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
@@ -53,6 +55,7 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
     onRaffleEntered: () => {
       refetchPrizePool()
       refetchEntries()
+      refetchPlayerEntryCount()
     },
     onDrawCompleted: (result) => {
       setDrawingResult(result)
@@ -60,6 +63,7 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
       refetchEntries()
       refetchUnclaimedPrize()
       refetchDeadline()
+      refetchPlayerEntryCount()
     },
   })
 
@@ -391,14 +395,14 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-purple-300 font-bold">Your Entries</span>
-                    <span className="text-2xl font-black text-amber-300">0</span>
+                    <span className="text-2xl font-black text-amber-300">{playerEntryCount}</span>
                   </div>
                 </div>
                 <Separator className="bg-purple-600" />
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-purple-300 font-bold">Win Chance</span>
-                    <span className="text-2xl font-black text-emerald-300">0%</span>
+                    <span className="text-2xl font-black text-emerald-300">{entriesCount > 0 ? Math.round((playerEntryCount / entriesCount) * 100) : 0}%</span>
                   </div>
                 </div>
               </CardContent>
