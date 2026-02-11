@@ -39,6 +39,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     uint256 private vrfRequestTimestamp;
 
     mapping(address => uint256) private unclaimedPrizes;
+    mapping(uint256 => mapping(address => uint256)) private playerEntryCount;
 
     /// @notice Emitted when a player enters the raffle
     /// @param roundNumber The current round number
@@ -124,6 +125,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
         _addPlayerToRaffle(msg.sender);
         prizePool += msg.value;
+        ++playerEntryCount[roundNumber][msg.sender];
 
         emit RaffleEntered(roundNumber, msg.sender);
     }
@@ -206,6 +208,10 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     /// @notice Returns the unclaimed prize amount for a given address
     /// @param player The address to check
     /// @return The unclaimed prize amount in wei
+    function getPlayerEntryCount(address player) external view returns (uint256) {
+        return playerEntryCount[roundNumber][player];
+    }
+
     function getUnclaimedPrize(address player) external view returns (uint256) {
         return unclaimedPrizes[player];
     }
