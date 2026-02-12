@@ -23,6 +23,11 @@ contract RaffleTest is Test {
     uint256 private constant THIRD_ENTRY_WINS = 2;
     uint256 private constant FOURTH_ENTRY_WINS = 3;
 
+    uint96 private constant VRF_MOCK_BASE_FEE = 0.1 ether;
+    uint96 private constant VRF_MOCK_GAS_PRICE = 1 gwei;
+    int256 private constant VRF_MOCK_WEI_PER_UNIT_LINK = 0.0053 ether;
+    uint256 private constant VRF_SUBSCRIPTION_FUND_AMOUNT = 100 ether;
+
     MyVrfCoordinatorV25Mock private vrfCoordinatorMock;
     uint256 private subscriptionId;
 
@@ -33,9 +38,10 @@ contract RaffleTest is Test {
     event PrizeClaimFailed(address indexed winner, uint256 amount);
 
     function setUp() public {
-        vrfCoordinatorMock = new MyVrfCoordinatorV25Mock(100000000000000000, 1000000000, 5300000000000000);
+        vrfCoordinatorMock =
+            new MyVrfCoordinatorV25Mock(VRF_MOCK_BASE_FEE, VRF_MOCK_GAS_PRICE, VRF_MOCK_WEI_PER_UNIT_LINK);
         subscriptionId = vrfCoordinatorMock.deterministicCreateSubscription();
-        vrfCoordinatorMock.fundSubscription(subscriptionId, 100000000000000000000);
+        vrfCoordinatorMock.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT);
     }
 
     function testRaffleInitializes() public {
