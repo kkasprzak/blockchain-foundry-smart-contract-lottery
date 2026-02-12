@@ -297,7 +297,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     // slither-disable-next-line timestamp
     function _isEntryWindowOpen() private view returns (bool) {
-        return block.timestamp - lastTimeStamp < INTERVAL + 1;
+        return block.timestamp - lastTimeStamp <= INTERVAL;
     }
 
     function _isEntryWindowClosed() private view returns (bool) {
