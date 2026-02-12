@@ -23,6 +23,11 @@ contract RaffleTest is Test {
     uint256 private constant THIRD_ENTRY_WINS = 2;
     uint256 private constant FOURTH_ENTRY_WINS = 3;
 
+    uint96 private constant VRF_MOCK_BASE_FEE = 0.1 ether;
+    uint96 private constant VRF_MOCK_GAS_PRICE = 1 gwei;
+    int256 private constant VRF_MOCK_WEI_PER_UNIT_LINK = 0.0053 ether;
+    uint256 private constant VRF_SUBSCRIPTION_FUND_AMOUNT = 100 ether;
+
     MyVrfCoordinatorV25Mock private vrfCoordinatorMock;
     uint256 private subscriptionId;
 
@@ -33,14 +38,45 @@ contract RaffleTest is Test {
     event PrizeClaimFailed(address indexed winner, uint256 amount);
 
     function setUp() public {
-        vrfCoordinatorMock = new MyVrfCoordinatorV25Mock(100000000000000000, 1000000000, 5300000000000000);
+        vrfCoordinatorMock =
+            new MyVrfCoordinatorV25Mock(VRF_MOCK_BASE_FEE, VRF_MOCK_GAS_PRICE, VRF_MOCK_WEI_PER_UNIT_LINK);
         subscriptionId = vrfCoordinatorMock.deterministicCreateSubscription();
-        vrfCoordinatorMock.fundSubscription(subscriptionId, 100000000000000000000);
+        vrfCoordinatorMock.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT);
     }
 
     function testRaffleInitializes() public {
         Raffle raffle = _createValidRaffle();
         assertTrue(address(raffle) != address(0));
+    }
+
+    function testGetRaffleStateReturnsOpenAfterCreation() public {
+        Raffle raffle = _createValidRaffle();
+
+        assertEq(uint256(raffle.getRaffleState()), uint256(Raffle.RaffleState.OPEN));
+    }
+
+    function testGetRoundNumberReturnsFirstRoundAfterCreation() public {
+        Raffle raffle = _createValidRaffle();
+
+        assertEq(raffle.getRoundNumber(), FIRST_ROUND);
+    }
+
+    function testGetPlayerReturnsPlayerAtIndex() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        assertEq(raffle.getPlayer(0), player);
+    }
+
+    function testGetPlayerRevertsWhenIndexOutOfBounds() public {
+        Raffle raffle = _createValidRaffle();
+
+        vm.expectRevert();
+        raffle.getPlayer(0);
     }
 
     function testRaffleInitializesWithEntranceFee() public {
@@ -117,6 +153,18 @@ contract RaffleTest is Test {
         _enterRaffleAsPlayer(raffle, player, overpayment);
     }
 
+    function testFuzz_EnterRaffleRevertsWithWrongFee(uint256 payment) public {
+        uint256 entranceFee = 0.01 ether;
+        vm.assume(payment != entranceFee);
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, payment);
+
+        vm.expectRevert(Raffle.Raffle__InvalidEntranceFee.selector);
+        _enterRaffleAsPlayer(raffle, player, payment);
+    }
+
     function testPlayerCanEnterRaffleMultipleTimes() public {
         uint256 entranceFee = 0.01 ether;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
@@ -131,7 +179,7 @@ contract RaffleTest is Test {
         assertEq(address(raffle).balance, 3 * entranceFee);
     }
 
-    function testMultipleEntriesIncreasesPrizePool() public {
+    function testWinnerReceivesFullPrizeFromMultipleEntries() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
@@ -284,6 +332,27 @@ contract RaffleTest is Test {
         vrfCoordinatorMock.simulateVrfCoordinatorCallback(vm.getRecordedLogs().getVrfRequestId(), address(raffle), 1);
 
         assertEq(vm.getRecordedLogs().getWinner(), player2);
+    }
+
+    function testFuzz_WinnerSelectionIsAlwaysValidPlayer(uint256 randomWord) public {
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address player1 = makeAddr("player1");
+        address player2 = makeAddr("player2");
+        address player3 = makeAddr("player3");
+
+        _fundPlayerForRaffle(player1, 1 ether);
+        _fundPlayerForRaffle(player2, 1 ether);
+        _fundPlayerForRaffle(player3, 1 ether);
+
+        _enterRaffleAsPlayer(raffle, player1, entranceFee);
+        _enterRaffleAsPlayer(raffle, player2, entranceFee);
+        _enterRaffleAsPlayer(raffle, player3, entranceFee);
+
+        address winner = _runRound(raffle, interval, randomWord);
+
+        assertTrue(winner == player1 || winner == player2 || winner == player3);
     }
 
     function testEventEmittedWhenDrawCompletesWithNoWinner() public {
@@ -592,6 +661,26 @@ contract RaffleTest is Test {
         assertEq(player2.balance, player2BalanceBefore + entranceFee * 2);
     }
 
+    function testFuzz_UnclaimedPrizesAccumulateAcrossRounds(uint8 winCount) public {
+        vm.assume(winCount > 0 && winCount <= 5);
+        uint256 entranceFee = 0.01 ether;
+        uint256 interval = 30;
+        Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
+        address winner = makeAddr("winner");
+        address opponent = makeAddr("opponent");
+
+        _fundPlayerForRaffle(winner, 1 ether);
+        _fundPlayerForRaffle(opponent, 1 ether);
+
+        for (uint256 i = 0; i < winCount; i++) {
+            _enterRaffleAsPlayer(raffle, winner, entranceFee);
+            _enterRaffleAsPlayer(raffle, opponent, entranceFee);
+            _runRound(raffle, interval, FIRST_ENTRY_WINS);
+        }
+
+        assertEq(raffle.getUnclaimedPrize(winner), entranceFee * 2 * winCount);
+    }
+
     // Chainlink Automation integration tests
     function testEntryWindowIsOpenWhenIntervalHasNotPassed() public {
         uint256 entranceFee = 0.01 ether;
@@ -641,6 +730,20 @@ contract RaffleTest is Test {
             entranceFee * 3,
             "Prize pool should be equal to the entrance fee multiplied by the number of players"
         );
+    }
+
+    function testFuzz_PrizePoolAccumulatesCorrectly(uint8 playerCount) public {
+        vm.assume(playerCount > 0 && playerCount <= 50);
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+
+        for (uint256 i = 0; i < playerCount; i++) {
+            address player = makeAddr(string.concat("player", vm.toString(i)));
+            _fundPlayerForRaffle(player, entranceFee);
+            _enterRaffleAsPlayer(raffle, player, entranceFee);
+        }
+
+        assertEq(raffle.getPrizePool(), entranceFee * playerCount);
     }
 
     function testGetEntriesCountReturnsNumberOfEntries() public {

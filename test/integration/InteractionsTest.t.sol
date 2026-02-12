@@ -13,13 +13,14 @@ contract InteractionsTest is Test {
     using LogHelpers for Vm.Log[];
 
     Raffle private raffle;
+    DeployRaffle private deployRaffle;
     MyVrfCoordinatorV25Mock private vrfCoordinatorMock;
 
     event RaffleEntered(uint256 indexed roundNumber, address indexed player);
     event DrawCompleted(uint256 indexed roundNumber, address indexed winner, uint256 prize);
 
     function setUp() external {
-        DeployRaffle deployRaffle = new DeployRaffle();
+        deployRaffle = new DeployRaffle();
         raffle = deployRaffle.run();
         vrfCoordinatorMock = MyVrfCoordinatorV25Mock(address(raffle.s_vrfCoordinator()));
     }
@@ -52,7 +53,7 @@ contract InteractionsTest is Test {
         vm.prank(player3);
         raffle.enterRaffle{value: entranceFee}();
 
-        vm.warp(block.timestamp + 301);
+        vm.warp(block.timestamp + deployRaffle.DEFAULT_INTERVAL() + 1);
 
         vm.recordLogs();
         PerformUpkeep performUpkeepScript = new PerformUpkeep();

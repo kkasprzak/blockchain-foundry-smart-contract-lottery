@@ -212,6 +212,18 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         return playerEntryCount[roundNumber][player];
     }
 
+    function getRaffleState() external view returns (RaffleState) {
+        return raffleState;
+    }
+
+    function getRoundNumber() external view returns (uint256) {
+        return roundNumber;
+    }
+
+    function getPlayer(uint256 index) external view returns (address) {
+        return players[index];
+    }
+
     function getUnclaimedPrize(address player) external view returns (uint256) {
         return unclaimedPrizes[player];
     }
@@ -259,7 +271,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     }
 
     function _resetRaffleForNextRound() private {
-        players = new address payable[](0);
+        delete players;
         lastTimeStamp = block.timestamp;
         raffleState = RaffleState.OPEN;
         ++roundNumber;
@@ -285,7 +297,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
 
     // slither-disable-next-line timestamp
     function _isEntryWindowOpen() private view returns (bool) {
-        return block.timestamp - lastTimeStamp < INTERVAL + 1;
+        return block.timestamp - lastTimeStamp <= INTERVAL;
     }
 
     function _isEntryWindowClosed() private view returns (bool) {
