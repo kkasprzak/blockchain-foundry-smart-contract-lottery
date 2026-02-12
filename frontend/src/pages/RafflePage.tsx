@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Button } from "@/components/ui/button"
@@ -51,11 +51,27 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
     resetDismissed: resetClaimError,
   } = useDismissableError(isClaimError, claimError)
 
+  const [showEntrySuccess, setShowEntrySuccess] = useState(false)
+  const entrySuccessTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+
+  const flashEntrySuccess = () => {
+    setShowEntrySuccess(true)
+    if (entrySuccessTimeoutRef.current) clearTimeout(entrySuccessTimeoutRef.current)
+    entrySuccessTimeoutRef.current = setTimeout(() => setShowEntrySuccess(false), 3000)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (entrySuccessTimeoutRef.current) clearTimeout(entrySuccessTimeoutRef.current)
+    }
+  }, [])
+
   useWatchRaffleEvents({
     onRaffleEntered: () => {
       refetchPrizePool()
       refetchEntries()
       refetchPlayerEntryCount()
+      flashEntrySuccess()
     },
     onDrawCompleted: (result) => {
       setDrawingResult(result)
@@ -295,8 +311,12 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
                     size="lg"
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
-                    className={`w-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-300 text-purple-950 text-xl font-black py-10 px-8 shadow-[0_0_80px_rgba(251,191,36,1)] hover:shadow-[0_0_150px_rgba(251,191,36,1)] border-4 border-amber-200 hover:scale-105 transition-all rounded-xl relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-                      isConnected && !isEntryWindowClosed && !isButtonHovered && !isPending ? "animate-flash" : ""
+                    className={`w-full text-xl font-black py-10 px-8 border-4 hover:scale-105 transition-all rounded-xl relative overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                      showEntrySuccess
+                        ? "bg-gradient-to-r from-emerald-400 via-green-300 to-emerald-400 text-purple-950 border-emerald-200 shadow-[0_0_80px_rgba(52,211,153,1)]"
+                        : `bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:via-yellow-200 hover:to-amber-300 text-purple-950 border-amber-200 shadow-[0_0_80px_rgba(251,191,36,1)] hover:shadow-[0_0_150px_rgba(251,191,36,1)] ${
+                            isConnected && !isEntryWindowClosed && !isButtonHovered && !isPending ? "animate-flash" : ""
+                          }`
                     }`}
                   >
                     <div className="relative flex items-center justify-center gap-3">
@@ -305,9 +325,11 @@ const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, r
                           ? "CONNECT FIRST"
                           : isPending
                             ? "PENDING..."
-                            : isEntryWindowClosed
-                              ? "ENTRIES CLOSED"
-                              : "ENTER RAFFLE"}
+                            : showEntrySuccess
+                              ? "ENTERED!"
+                              : isEntryWindowClosed
+                                ? "ENTRIES CLOSED"
+                                : "ENTER RAFFLE"}
                       </span>
                     </div>
                   </Button>
