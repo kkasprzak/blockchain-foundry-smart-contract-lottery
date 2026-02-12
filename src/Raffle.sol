@@ -271,7 +271,7 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
     }
 
     function _resetRaffleForNextRound() private {
-        players = new address payable[](0);
+        delete players;
         lastTimeStamp = block.timestamp;
         raffleState = RaffleState.OPEN;
         ++roundNumber;
