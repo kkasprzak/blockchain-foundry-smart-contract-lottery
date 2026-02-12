@@ -179,7 +179,7 @@ contract RaffleTest is Test {
         assertEq(address(raffle).balance, 3 * entranceFee);
     }
 
-    function testMultipleEntriesIncreasesPrizePool() public {
+    function testWinnerReceivesFullPrizeFromMultipleEntries() public {
         uint256 entranceFee = 0.01 ether;
         uint256 interval = 30;
         Raffle raffle = _createRaffleWithEntranceFeeAndInterval(entranceFee, interval);
