@@ -14,7 +14,7 @@ export default createConfig({
     Raffle: {
       chain: "anvil",
       abi: RaffleAbi,
-      address: "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+      address: process.env.RAFFLE_CONTRACT_ADDRESS as `0x${string}`,
       startBlock: 0,
     },
   },
