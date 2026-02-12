@@ -47,6 +47,18 @@ export interface UseLiveRecentWinnersResult {
   reconnect: () => void;
 }
 
+function isRoundFromPonder(obj: unknown): obj is RoundFromPonder {
+  if (typeof obj !== "object" || obj === null) return false;
+  const rec = obj as Record<string, unknown>;
+  return (
+    typeof rec.id === "string" &&
+    typeof rec.roundNumber === "bigint" &&
+    typeof rec.prizePool === "bigint" &&
+    typeof rec.completedAt === "bigint" &&
+    (rec.winner === null || typeof rec.winner === "string")
+  );
+}
+
 function transformRound(raw: RoundFromPonder): RecentWinner {
   return {
     roundNumber: raw.roundNumber,
@@ -116,9 +128,10 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
           reconnectAttemptRef.current = 0;
           setError(null);
 
-          // Transform and UPDATE data (SSE sends updates)
-          const roundsTyped = result as unknown as RoundFromPonder[];
-          const transformed = roundsTyped
+          // Validate and transform SSE data
+          const rows = Array.isArray(result) ? result : [];
+          const transformed = rows
+            .filter(isRoundFromPonder)
             .filter((r) => r.winner !== null)
             .map(transformRound);
 
