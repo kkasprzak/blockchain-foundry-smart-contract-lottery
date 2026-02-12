@@ -23,28 +23,13 @@ import { useUnclaimedPrize } from "@/hooks/useUnclaimedPrize"
 import { usePlayerEntryCount } from "@/hooks/usePlayerEntryCount"
 import { useClaimPrize } from "@/hooks/useClaimPrize"
 import { useLiveRecentWinners } from "@/hooks/useLiveRecentWinners"
+import { useRoundNumber } from "@/hooks/useRoundNumber"
+import { useLiveCurrentRoundPlayers } from "@/hooks/useLiveCurrentRoundPlayers"
 import { useDismissableError } from "@/hooks/useDismissableError"
+import { truncateAddress } from "@/lib/utils"
 import type { DrawingResult } from "@/types/raffle"
 import { TARGET_CHAIN_ID } from "@/config/env"
 import { sepolia, anvil } from "wagmi/chains"
-
-const CURRENT_PLAYERS = [
-  { address: "0x742d...9f3a", entries: 5 },
-  { address: "0x8c3f...4e2b", entries: 3 },
-  { address: "0x1a5b...7c8d", entries: 2 },
-  { address: "0x9e2a...3b1f", entries: 1 },
-  { address: "0x5d1c...8a4e", entries: 1 },
-  { address: "0x4c8f...9e3a", entries: 4 },
-  { address: "0x7a2b...5d1c", entries: 2 },
-  { address: "0x3e9f...8c6b", entries: 3 },
-  { address: "0x6b1d...4f7a", entries: 1 },
-  { address: "0x9f4e...2c8d", entries: 2 },
-  { address: "0x2d7a...6e9b", entries: 1 },
-  { address: "0x8c3e...1f4d", entries: 3 },
-  { address: "0x5f9b...7a2e", entries: 1 },
-  { address: "0x1e6c...9d4f", entries: 2 },
-  { address: "0x4a8d...3c7e", entries: 1 },
-]
 
 export function RafflePage() {
   const { isConnected, address, chain } = useAccount()
@@ -57,6 +42,8 @@ export function RafflePage() {
   const { playerEntryCount, refetch: refetchPlayerEntryCount } = usePlayerEntryCount(address)
   const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
 
+  const { roundNumber, refetch: refetchRoundNumber } = useRoundNumber()
+  const { players: currentPlayers } = useLiveCurrentRoundPlayers({ roundNumber })
   const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
 
@@ -101,6 +88,7 @@ export function RafflePage() {
       refetchUnclaimedPrize()
       refetchDeadline()
       refetchPlayerEntryCount()
+      refetchRoundNumber()
     },
   })
 
@@ -249,7 +237,8 @@ export function RafflePage() {
             <CurrentRoundCard
               entriesCount={entriesCount}
               isLoadingEntries={isLoadingEntries}
-              players={CURRENT_PLAYERS}
+              players={currentPlayers}
+              connectedAddress={address ? truncateAddress(address) : undefined}
             />
             <PlayerStatsCard
               playerEntryCount={playerEntryCount}

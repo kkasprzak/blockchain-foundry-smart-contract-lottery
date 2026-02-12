@@ -6,7 +6,7 @@
  * If you modify the indexer schema, you MUST update this file!
  * Failure to sync will cause runtime errors without TypeScript warnings.
  *
- * Last synced: 2026-02-10
+ * Last synced: 2026-02-12
  */
 
 import { onchainTable } from "ponder";
@@ -19,4 +19,11 @@ export const round = onchainTable("round", (t) => ({
   completedAt: t.bigint().notNull(),
 }));
 
-export const schema = { round };
+export const roundPlayer = onchainTable("round_player", (t) => ({
+  id: t.text().primaryKey(),
+  roundNumber: t.bigint().notNull(),
+  player: t.hex().notNull(),
+  entryCount: t.integer().notNull(),
+}));
+
+export const schema = { round, roundPlayer };

@@ -19,3 +19,15 @@ export interface RecentWinner {
   prize: string
   time: string
 }
+
+export interface RoundPlayerFromPonder {
+  id: string
+  roundNumber: bigint
+  player: `0x${string}`
+  entryCount: number
+}
+
+export interface CurrentRoundPlayer {
+  address: string
+  entries: number
+}
