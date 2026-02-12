@@ -49,6 +49,36 @@ contract RaffleTest is Test {
         assertTrue(address(raffle) != address(0));
     }
 
+    function testGetRaffleStateReturnsOpenAfterCreation() public {
+        Raffle raffle = _createValidRaffle();
+
+        assertEq(uint256(raffle.getRaffleState()), uint256(Raffle.RaffleState.OPEN));
+    }
+
+    function testGetRoundNumberReturnsFirstRoundAfterCreation() public {
+        Raffle raffle = _createValidRaffle();
+
+        assertEq(raffle.getRoundNumber(), FIRST_ROUND);
+    }
+
+    function testGetPlayerReturnsPlayerAtIndex() public {
+        uint256 entranceFee = 0.01 ether;
+        Raffle raffle = _createRaffleWithEntranceFee(entranceFee);
+        address player = makeAddr("player");
+
+        _fundPlayerForRaffle(player, 1 ether);
+        _enterRaffleAsPlayer(raffle, player, entranceFee);
+
+        assertEq(raffle.getPlayer(0), player);
+    }
+
+    function testGetPlayerRevertsWhenIndexOutOfBounds() public {
+        Raffle raffle = _createValidRaffle();
+
+        vm.expectRevert();
+        raffle.getPlayer(0);
+    }
+
     function testRaffleInitializesWithEntranceFee() public {
         uint256 entranceFee = 0.01 ether;
         Raffle raffle = _createRaffleWithEntranceFee(entranceFee);

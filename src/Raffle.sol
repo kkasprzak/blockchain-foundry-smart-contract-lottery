@@ -212,6 +212,18 @@ contract Raffle is VRFConsumerBaseV2Plus, ReentrancyGuard, AutomationCompatibleI
         return playerEntryCount[roundNumber][player];
     }
 
+    function getRaffleState() external view returns (RaffleState) {
+        return raffleState;
+    }
+
+    function getRoundNumber() external view returns (uint256) {
+        return roundNumber;
+    }
+
+    function getPlayer(uint256 index) external view returns (address) {
+        return players[index];
+    }
+
     function getUnclaimedPrize(address player) external view returns (uint256) {
         return unclaimedPrizes[player];
     }
