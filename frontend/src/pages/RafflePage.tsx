@@ -3,7 +3,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trophy, Coins } from "lucide-react"
-import { WheelPlaceholder } from "@/components/WheelPlaceholder"
+import { PhaserWheel } from "@/components/wheel/PhaserWheel"
 import { DrawCompletedAnnouncement } from "@/components/DrawCompletedAnnouncement"
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner"
 import { PrizePoolCard } from "@/components/raffle/PrizePoolCard"
@@ -225,7 +225,7 @@ export function RafflePage() {
                       <p className="text-pink-300 font-bold mt-4 text-xl">Please wait for winner selection</p>
                     </div>
                   ) : (
-                    <WheelPlaceholder />
+                    <PhaserWheel players={currentPlayers} connectedAddress={address} />
                   )}
                 </div>
               </CardContent>
