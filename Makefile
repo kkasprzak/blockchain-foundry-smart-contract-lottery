@@ -4,7 +4,7 @@
 .PHONY: create-subscription fund-subscription add-consumer subscription-status
 .PHONY: register-upkeep fund-upkeep upkeep-status
 .PHONY: frontend-dev frontend-build indexer-dev indexer-codegen
-.PHONY: enter-player-1 enter-player-2 enter-player-3 enter-player-4 enter-player-5 enter-5-players complete-draw
+.PHONY: enter-player-1 enter-player-2 enter-player-3 enter-player-4 enter-player-5 enter-5-players complete-draw round-time
 
 # Default target - show help when no target specified
 help:
@@ -56,6 +56,7 @@ help:
 	@echo "  enter-player-5         Player 5 enters raffle (0.01 ETH)"
 	@echo "  enter-5-players        All 5 players enter raffle"
 	@echo "  complete-draw          Complete raffle draw (performUpkeep + VRF callback)"
+	@echo "  round-time             Check time remaining in current round"
 	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make test                         # Quick testing during development"
@@ -184,6 +185,17 @@ enter-5-players:
 	@$(MAKE) -s enter-player-4
 	@$(MAKE) -s enter-player-5
 	@echo "All 5 players entered!"
+
+round-time:
+	@RAFFLE_ADDR=$$(jq -r '.transactions[] | select(.contractName == "Raffle") | .contractAddress' broadcast/DeployRaffle.s.sol/31337/run-latest.json); \
+	DEADLINE=$$(cast call $$RAFFLE_ADDR "getEntryDeadline()(uint256)" --rpc-url local | awk '{print $$1}'); \
+	CURRENT=$$(cast block latest --field timestamp --rpc-url local); \
+	REMAINING=$$((DEADLINE - CURRENT)); \
+	if [ $$REMAINING -gt 0 ]; then \
+		echo "Entry window open: $$((REMAINING / 60))m $$((REMAINING % 60))s remaining"; \
+	else \
+		echo "Entry window closed $$(( -REMAINING ))s ago"; \
+	fi
 
 complete-draw:
 	@echo "Completing full draw cycle (performUpkeep + VRF callback)..."

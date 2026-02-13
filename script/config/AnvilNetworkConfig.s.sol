@@ -6,10 +6,10 @@ import {Raffle} from "../../src/Raffle.sol";
 import {MyVrfCoordinatorV25Mock} from "../../test/mocks/MyVrfCoordinatorV25Mock.sol";
 
 contract AnvilNetworkConfig is NetworkConfig {
-    uint96 private constant VRF_MOCK_BASE_FEE = 0.1 ether;
+    uint96 private constant VRF_MOCK_BASE_FEE = 1 wei;
     uint96 private constant VRF_MOCK_GAS_PRICE = 1 gwei;
     int256 private constant VRF_MOCK_WEI_PER_UNIT_LINK = 0.004 ether;
-    uint256 private constant VRF_SUBSCRIPTION_FUND_AMOUNT = 100 ether;
+    uint256 private constant VRF_SUBSCRIPTION_FUND_AMOUNT = 100_000 ether;
     bytes32 private constant VRF_KEY_HASH = 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae;
     uint32 private constant VRF_CALLBACK_GAS_LIMIT = 500000;
 

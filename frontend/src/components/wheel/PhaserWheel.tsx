@@ -24,7 +24,9 @@ export function PhaserWheel({ players, connectedAddress }: PhaserWheelProps) {
     return players.map((p) => ({
       address: p.address,
       entries: p.entries,
-      isConnected: truncated !== "" && p.address === truncated,
+      isConnected:
+        truncated !== "" &&
+        p.address.toLowerCase() === truncated.toLowerCase(),
     }))
   }, [players, connectedAddress])
 
