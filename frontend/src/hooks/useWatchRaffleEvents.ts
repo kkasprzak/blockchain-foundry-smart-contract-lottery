@@ -4,7 +4,7 @@ import { RAFFLE_ABI, RAFFLE_ADDRESS } from "@/config/contracts";
 import type { DrawingResult } from "@/types/raffle";
 
 interface UseWatchRaffleEventsProps {
-  onRaffleEntered?: () => void;
+  onRaffleEntered?: (player: string) => void;
   onDrawCompleted?: (result: DrawingResult) => void;
 }
 
@@ -16,8 +16,15 @@ export function useWatchRaffleEvents({
     address: RAFFLE_ADDRESS,
     abi: RAFFLE_ABI,
     eventName: "RaffleEntered",
-    onLogs() {
-      onRaffleEntered?.();
+    onLogs(logs) {
+      const log = logs[0];
+      if (
+        log?.args &&
+        "player" in log.args &&
+        log.args.player !== undefined
+      ) {
+        onRaffleEntered?.(log.args.player);
+      }
     },
   });
 
