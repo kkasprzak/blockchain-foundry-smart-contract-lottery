@@ -30,7 +30,7 @@ export function YourWinningsCard({
   // Derive button text from current phase
   const getButtonText = () => {
     if (showClaimSuccess) return "CLAIMED!"
-    if (isWaitingForSignature) return "CONFIRM IN WALLET..."
+    if (isWaitingForSignature) return "CONFIRM WALLET..."
     if (isWaitingForConfirmation) return "CONFIRMING..."
     return "CLAIM NOW"
   }

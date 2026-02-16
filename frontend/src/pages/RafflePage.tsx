@@ -36,7 +36,14 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 export function RafflePage() {
   const { isConnected, address, chain } = useAccount()
   const { entranceFee, entranceFeeRaw, isLoading: isLoadingFee } = useEntranceFee()
-  const { enterRaffle, isPending, isError, error } = useEnterRaffle()
+  const {
+    enterRaffle,
+    isWaitingForSignature: isEnterWaitingForSignature,
+    isWaitingForConfirmation: isEnterWaitingForConfirmation,
+    isError,
+    error,
+    hash: enterTxHash,
+  } = useEnterRaffle()
   const { timeLeft, isEntryWindowClosed, isLoading: isLoadingTime, refetch: refetchDeadline } = useRaffleTimeRemaining()
   const { prizePool, isLoading: isLoadingPrizePool, refetch: refetchPrizePool } = usePrizePool()
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
@@ -94,11 +101,14 @@ export function RafflePage() {
   }, [])
 
   useWatchRaffleEvents({
-    onRaffleEntered: () => {
+    onRaffleEntered: (player) => {
       refetchPrizePool()
       refetchEntries()
-      refetchPlayerEntryCount()
-      flashEntrySuccess()
+      // Only flash success if the current user entered
+      if (player.toLowerCase() === address?.toLowerCase()) {
+        refetchPlayerEntryCount()
+        flashEntrySuccess()
+      }
     },
     onDrawCompleted: (result) => {
       if (result.winner === ZERO_ADDRESS) {
@@ -230,8 +240,11 @@ export function RafflePage() {
               isLoadingFee={isLoadingFee}
               isConnected={isConnected}
               isEntryWindowClosed={isEntryWindowClosed}
-              isPending={isPending}
+              isWaitingForSignature={isEnterWaitingForSignature}
+              isWaitingForConfirmation={isEnterWaitingForConfirmation}
               showEntrySuccess={showEntrySuccess}
+              txHash={enterTxHash}
+              explorerBaseUrl={explorerBaseUrl}
               errorMessage={errorMessage}
               onEnter={handleEnterRaffle}
               onDismissError={handleDismissError}
