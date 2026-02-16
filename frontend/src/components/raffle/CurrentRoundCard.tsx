@@ -1,23 +1,48 @@
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Ticket, Users } from "lucide-react"
 
 interface CurrentRoundCardProps {
+  roundNumber?: bigint
   entriesCount: number
   isLoadingEntries: boolean
   players: { address: string; entries: number }[]
   connectedAddress?: string
 }
 
-export function CurrentRoundCard({ entriesCount, isLoadingEntries, players, connectedAddress }: CurrentRoundCardProps) {
+export function CurrentRoundCard({ roundNumber, entriesCount, isLoadingEntries, players, connectedAddress }: CurrentRoundCardProps) {
+  const [isPulsing, setIsPulsing] = useState(false)
+  const previousRoundRef = useRef<bigint | undefined>(undefined)
+  const pulseTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+
+  useEffect(() => {
+    // Detect round number changes and trigger pulse
+    if (roundNumber !== undefined && previousRoundRef.current !== undefined && roundNumber > previousRoundRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsPulsing(true)
+      if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current)
+      pulseTimeoutRef.current = setTimeout(() => setIsPulsing(false), 2000)
+    }
+    previousRoundRef.current = roundNumber
+  }, [roundNumber])
+
+  useEffect(() => {
+    return () => {
+      if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current)
+    }
+  }, [])
+
   return (
     <Card className="border-4 border-cyan-400 bg-gradient-to-br from-purple-900/70 to-violet-900/70 backdrop-blur-sm shadow-[0_0_30px_rgba(34,211,238,0.4)] relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 via-transparent to-purple-600/10"></div>
       <CardHeader className="relative z-10">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-cyan-300 text-xl font-black">
+          <CardTitle className={`flex items-center gap-2 text-xl font-black transition-colors duration-300 ${
+            isPulsing ? "text-amber-300" : "text-cyan-300"
+          }`}>
             <Ticket className="h-6 w-6" />
-            CURRENT ROUND
+            {roundNumber !== undefined ? `ROUND #${roundNumber}` : "CURRENT ROUND"}
           </CardTitle>
           <Badge className="bg-cyan-400 text-purple-950 font-black px-3 py-1">
             {isLoadingEntries ? "..." : entriesCount}

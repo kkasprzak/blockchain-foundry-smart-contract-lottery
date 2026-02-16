@@ -171,3 +171,31 @@
   animation: fade-in 300ms ease-out;
 }
 
+@keyframes slide-down {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes progress-shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-progress-shrink {
+  animation: progress-shrink 15000ms linear forwards;
+}
+

@@ -5,6 +5,7 @@ import { truncateAddress } from "@/lib/utils"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 interface DrawCompletedAnnouncementProps {
+  roundNumber: bigint
   winner: `0x${string}`
   prizeFormatted: string
   isCurrentUserWinner: boolean
@@ -97,6 +98,7 @@ function AnnouncementCard({ colors, title, subtitle, onDismiss }: AnnouncementCa
 }
 
 export function DrawCompletedAnnouncement({
+  roundNumber,
   winner,
   prizeFormatted,
   isCurrentUserWinner,
@@ -108,8 +110,8 @@ export function DrawCompletedAnnouncement({
     return (
       <AnnouncementCard
         colors={AMBER_COLORS}
-        title="No winner - round reset"
-        subtitle="No participants in this round"
+        title={`ROUND #${roundNumber} — No participants`}
+        subtitle="Round reset"
         onDismiss={onDismiss}
       />
     )
@@ -119,7 +121,7 @@ export function DrawCompletedAnnouncement({
     return (
       <AnnouncementCard
         colors={EMERALD_COLORS}
-        title="You won!"
+        title={`ROUND #${roundNumber} — YOU WON!`}
         subtitle={`Prize: ${prizeFormatted} ETH`}
         onDismiss={onDismiss}
       />
@@ -129,8 +131,8 @@ export function DrawCompletedAnnouncement({
   return (
     <AnnouncementCard
       colors={AMBER_COLORS}
-      title={`Winner: ${truncateAddress(winner)}`}
-      subtitle={`Prize: ${prizeFormatted} ETH`}
+      title={`ROUND #${roundNumber} COMPLETE`}
+      subtitle={`Winner: ${truncateAddress(winner)}  |  Prize: ${prizeFormatted} ETH`}
       onDismiss={onDismiss}
     />
   )
