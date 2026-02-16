@@ -49,7 +49,7 @@ export function EntryFeeCard({
             : "ENTER RAFFLE"
 
   const isDisabled = !isConnected || isEntryWindowClosed || frozen || isWaitingForSignature || isWaitingForConfirmation || showEntrySuccess
-  const showFlash = isConnected && !isEntryWindowClosed && !isButtonHovered && !isWaitingForSignature && !isWaitingForConfirmation
+  const showFlash = isConnected && !isEntryWindowClosed && !frozen && !isButtonHovered && !isWaitingForSignature && !isWaitingForConfirmation
   const showEtherscanLink = isWaitingForConfirmation && txHash && explorerBaseUrl
 
   return (

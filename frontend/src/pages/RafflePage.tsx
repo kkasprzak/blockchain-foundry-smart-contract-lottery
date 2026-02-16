@@ -116,12 +116,10 @@ export function RafflePage() {
       } else {
         setPendingDrawResult(result)
       }
+      // Only update Prize Pool and Your Winnings immediately
+      // Everything else updates when user clicks "NEXT ROUND"
       refetchPrizePool()
-      refetchEntries()
       refetchUnclaimedPrize()
-      refetchDeadline()
-      refetchPlayerEntryCount()
-      refetchRoundNumber()
     },
   })
 
@@ -227,7 +225,14 @@ export function RafflePage() {
             winner={drawingResult.winner}
             prizeFormatted={drawingResult.prizeFormatted}
             isCurrentUserWinner={isCurrentUserWinner ?? false}
-            onNextRound={() => setDrawingResult(null)}
+            onNextRound={() => {
+              // Dismiss banner and refresh all data for new round
+              setDrawingResult(null)
+              refetchDeadline()
+              refetchEntries()
+              refetchPlayerEntryCount()
+              refetchRoundNumber()
+            }}
           />
         )}
 
