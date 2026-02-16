@@ -42,7 +42,15 @@ export function RafflePage() {
   const { entriesCount, isLoading: isLoadingEntries, refetch: refetchEntries } = useEntriesCount()
   const { unclaimedPrize, hasUnclaimedPrize, isLoading: isLoadingUnclaimedPrize, refetch: refetchUnclaimedPrize } = useUnclaimedPrize(address)
   const { playerEntryCount, refetch: refetchPlayerEntryCount } = usePlayerEntryCount(address)
-  const { claimPrize, isPending: isClaimPending, isSuccess: isClaimSuccess, isError: isClaimError, error: claimError } = useClaimPrize()
+  const {
+    claimPrize,
+    isWaitingForSignature: isClaimWaitingForSignature,
+    isWaitingForConfirmation: isClaimWaitingForConfirmation,
+    isSuccess: isClaimSuccess,
+    isError: isClaimError,
+    error: claimError,
+    hash: claimTxHash,
+  } = useClaimPrize()
 
   const { roundNumber, refetch: refetchRoundNumber } = useRoundNumber()
   const { players: currentPlayers } = useLiveCurrentRoundPlayers({ roundNumber })
@@ -74,9 +82,14 @@ export function RafflePage() {
     entrySuccessTimeoutRef.current = setTimeout(() => setShowEntrySuccess(false), 3000)
   }
 
+  const [showClaimSuccess, setShowClaimSuccess] = useState(false)
+  const claimSuccessTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const claimSuccessProcessedRef = useRef(false)
+
   useEffect(() => {
     return () => {
       if (entrySuccessTimeoutRef.current) clearTimeout(entrySuccessTimeoutRef.current)
+      if (claimSuccessTimeoutRef.current) clearTimeout(claimSuccessTimeoutRef.current)
     }
   }, [])
 
@@ -105,7 +118,12 @@ export function RafflePage() {
   const isCurrentUserWinner = drawingResult?.winner.toLowerCase() === address?.toLowerCase()
 
   useEffect(() => {
-    if (isClaimSuccess) {
+    if (isClaimSuccess && !claimSuccessProcessedRef.current) {
+      claimSuccessProcessedRef.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowClaimSuccess(true)
+      if (claimSuccessTimeoutRef.current) clearTimeout(claimSuccessTimeoutRef.current)
+      claimSuccessTimeoutRef.current = setTimeout(() => setShowClaimSuccess(false), 3000)
       refetchUnclaimedPrize()
     }
   }, [isClaimSuccess, refetchUnclaimedPrize])
@@ -119,6 +137,7 @@ export function RafflePage() {
 
   const handleClaimPrize = () => {
     resetClaimError()
+    claimSuccessProcessedRef.current = false
     claimPrize()
   }
 
@@ -132,6 +151,7 @@ export function RafflePage() {
   const isWrongNetwork = isConnected && chain && chain.id !== TARGET_CHAIN_ID
   const targetChain = TARGET_CHAIN_ID === sepolia.id ? sepolia : anvil
   const targetChainName = targetChain.name
+  const explorerBaseUrl = targetChain.blockExplorers?.default?.url
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-950 via-violet-950 to-purple-900 relative overflow-hidden">
@@ -259,8 +279,12 @@ export function RafflePage() {
             {!isLoadingUnclaimedPrize && (
               <YourWinningsCard
                 unclaimedPrize={unclaimedPrize}
-                hasUnclaimedPrize={hasUnclaimedPrize}
-                isClaimPending={isClaimPending}
+                hasUnclaimedPrize={hasUnclaimedPrize || showClaimSuccess}
+                isWaitingForSignature={isClaimWaitingForSignature}
+                isWaitingForConfirmation={isClaimWaitingForConfirmation}
+                showClaimSuccess={showClaimSuccess}
+                txHash={claimTxHash}
+                explorerBaseUrl={explorerBaseUrl}
                 claimErrorMessage={claimErrorMessage}
                 onClaim={handleClaimPrize}
                 onDismissError={handleDismissClaimError}
