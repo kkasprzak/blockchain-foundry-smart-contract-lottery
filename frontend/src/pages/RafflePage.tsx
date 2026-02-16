@@ -4,7 +4,7 @@ import { useAccount } from "wagmi"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trophy, Coins } from "lucide-react"
 import { PhaserWheel } from "@/components/wheel/PhaserWheel"
-import { DrawCompletedAnnouncement } from "@/components/DrawCompletedAnnouncement"
+import { RoundResultBanner } from "@/components/RoundResultBanner"
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner"
 import { PrizePoolCard } from "@/components/raffle/PrizePoolCard"
 import { CountdownCard } from "@/components/raffle/CountdownCard"
@@ -61,7 +61,7 @@ export function RafflePage() {
 
   const { roundNumber, refetch: refetchRoundNumber } = useRoundNumber()
   const { players: currentPlayers } = useLiveCurrentRoundPlayers({ roundNumber })
-  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
+  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 9 })
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
   const [pendingDrawResult, setPendingDrawResult] = useState<DrawingResult | null>(null)
 
@@ -116,12 +116,10 @@ export function RafflePage() {
       } else {
         setPendingDrawResult(result)
       }
+      // Only update Prize Pool and Your Winnings immediately
+      // Everything else updates when user clicks "NEXT ROUND"
       refetchPrizePool()
-      refetchEntries()
       refetchUnclaimedPrize()
-      refetchDeadline()
-      refetchPlayerEntryCount()
-      refetchRoundNumber()
     },
   })
 
@@ -222,11 +220,19 @@ export function RafflePage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 relative z-10">
         {drawingResult && (
-          <DrawCompletedAnnouncement
+          <RoundResultBanner
+            completedRoundNumber={drawingResult.roundNumber}
             winner={drawingResult.winner}
             prizeFormatted={drawingResult.prizeFormatted}
             isCurrentUserWinner={isCurrentUserWinner ?? false}
-            onDismiss={() => setDrawingResult(null)}
+            onNextRound={() => {
+              // Dismiss banner and refresh all data for new round
+              setDrawingResult(null)
+              refetchDeadline()
+              refetchEntries()
+              refetchPlayerEntryCount()
+              refetchRoundNumber()
+            }}
           />
         )}
 
@@ -234,12 +240,18 @@ export function RafflePage() {
           {/* Left Sidebar */}
           <div className="flex flex-col space-y-6 lg:col-span-3">
             <PrizePoolCard prizePool={prizePool} isLoading={isLoadingPrizePool} />
-            <CountdownCard hours={timeLeft.hours} minutes={timeLeft.minutes} seconds={timeLeft.seconds} />
+            <CountdownCard
+              hours={timeLeft.hours}
+              minutes={timeLeft.minutes}
+              seconds={timeLeft.seconds}
+              frozen={frozen}
+            />
             <EntryFeeCard
               entranceFee={entranceFee}
               isLoadingFee={isLoadingFee}
               isConnected={isConnected}
               isEntryWindowClosed={isEntryWindowClosed}
+              frozen={frozen}
               isWaitingForSignature={isEnterWaitingForSignature}
               isWaitingForConfirmation={isEnterWaitingForConfirmation}
               showEntrySuccess={showEntrySuccess}
@@ -280,6 +292,7 @@ export function RafflePage() {
           {/* Right Sidebar */}
           <div className="flex flex-col space-y-6 lg:col-span-3">
             <CurrentRoundCard
+              roundNumber={roundNumber}
               entriesCount={entriesCount}
               isLoadingEntries={isLoadingEntries}
               players={currentPlayers}

@@ -73,10 +73,9 @@ export function useRecentWinners(options?: UseRecentWinnersOptions) {
       const rounds = json.data?.rounds?.items ?? []
 
       const transformedWinners: RecentWinner[] = rounds
-        .filter((round) => round.winner !== null)
         .map((round) => ({
           roundNumber: BigInt(round.roundNumber),
-          address: truncateAddress(round.winner!),
+          address: round.winner ? truncateAddress(round.winner) : "No winner",
           prize: `${formatEther(BigInt(round.prizePool))} ETH`,
           time: formatRelativeTime(BigInt(round.completedAt)),
         }))
