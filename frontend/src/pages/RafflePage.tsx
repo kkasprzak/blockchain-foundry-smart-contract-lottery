@@ -12,7 +12,7 @@ import { EntryFeeCard } from "@/components/raffle/EntryFeeCard"
 import { CurrentRoundCard } from "@/components/raffle/CurrentRoundCard"
 import { PlayerStatsCard } from "@/components/raffle/PlayerStatsCard"
 import { RecentWinnersCard } from "@/components/raffle/RecentWinnersCard"
-import { UnclaimedPrizeBanner } from "@/components/raffle/UnclaimedPrizeBanner"
+import { YourWinningsCard } from "@/components/raffle/YourWinningsCard"
 import { useEntranceFee } from "@/hooks/useEntranceFee"
 import { useEnterRaffle } from "@/hooks/useEnterRaffle"
 import { useRaffleTimeRemaining } from "@/hooks/useRaffleTimeRemaining"
@@ -191,16 +191,6 @@ export function RafflePage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 relative z-10">
-        {hasUnclaimedPrize && !isLoadingUnclaimedPrize && (
-          <UnclaimedPrizeBanner
-            unclaimedPrize={unclaimedPrize}
-            isClaimPending={isClaimPending}
-            claimErrorMessage={claimErrorMessage}
-            onClaim={handleClaimPrize}
-            onDismissError={handleDismissClaimError}
-          />
-        )}
-
         {drawingResult && (
           <DrawCompletedAnnouncement
             winner={drawingResult.winner}
@@ -266,6 +256,16 @@ export function RafflePage() {
               playerEntryCount={playerEntryCount}
               entriesCount={entriesCount}
             />
+            {!isLoadingUnclaimedPrize && (
+              <YourWinningsCard
+                unclaimedPrize={unclaimedPrize}
+                hasUnclaimedPrize={hasUnclaimedPrize}
+                isClaimPending={isClaimPending}
+                claimErrorMessage={claimErrorMessage}
+                onClaim={handleClaimPrize}
+                onDismissError={handleDismissClaimError}
+              />
+            )}
           </div>
         </div>
 
