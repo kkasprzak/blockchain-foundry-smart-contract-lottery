@@ -61,7 +61,7 @@ export function RafflePage() {
 
   const { roundNumber, refetch: refetchRoundNumber } = useRoundNumber()
   const { players: currentPlayers } = useLiveCurrentRoundPlayers({ roundNumber })
-  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
+  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 9 })
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
   const [pendingDrawResult, setPendingDrawResult] = useState<DrawingResult | null>(null)
 

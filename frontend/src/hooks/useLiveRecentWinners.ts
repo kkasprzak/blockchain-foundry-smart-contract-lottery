@@ -132,7 +132,6 @@ export function useLiveRecentWinners(options?: UseLiveRecentWinnersOptions): Use
           const rows = Array.isArray(result) ? result : [];
           const transformed = rows
             .filter(isRoundFromPonder)
-            .filter((r) => r.winner !== null)
             .map(transformRound);
 
           setWinners(transformed);
