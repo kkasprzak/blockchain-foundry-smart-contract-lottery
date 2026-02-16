@@ -59,6 +59,8 @@ export function useContractWrite({ address, abi }: UseContractWriteParams) {
   return {
     write,
     isPending,
+    isWaitingForSignature: isWritePending,
+    isWaitingForConfirmation: isConfirming,
     isSuccess: isConfirmed,
     isError,
     error,
