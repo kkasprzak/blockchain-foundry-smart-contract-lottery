@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 import { Card, CardContent } from "@/components/ui/card"
@@ -31,6 +31,8 @@ import type { DrawingResult } from "@/types/raffle"
 import { TARGET_CHAIN_ID } from "@/config/env"
 import { sepolia, anvil } from "wagmi/chains"
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 export function RafflePage() {
   const { isConnected, address, chain } = useAccount()
   const { entranceFee, entranceFeeRaw, isLoading: isLoadingFee } = useEntranceFee()
@@ -46,6 +48,10 @@ export function RafflePage() {
   const { players: currentPlayers } = useLiveCurrentRoundPlayers({ roundNumber })
   const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
+  const [pendingDrawResult, setPendingDrawResult] = useState<DrawingResult | null>(null)
+
+  const spinTarget = pendingDrawResult?.winner ?? null
+  const frozen = pendingDrawResult !== null || drawingResult !== null
 
   const {
     errorMessage,
@@ -82,7 +88,11 @@ export function RafflePage() {
       flashEntrySuccess()
     },
     onDrawCompleted: (result) => {
-      setDrawingResult(result)
+      if (result.winner === ZERO_ADDRESS) {
+        setDrawingResult(result)
+      } else {
+        setPendingDrawResult(result)
+      }
       refetchPrizePool()
       refetchEntries()
       refetchUnclaimedPrize()
@@ -111,6 +121,13 @@ export function RafflePage() {
     resetClaimError()
     claimPrize()
   }
+
+  const handleSpinComplete = useCallback(() => {
+    if (pendingDrawResult) {
+      setDrawingResult(pendingDrawResult)
+      setPendingDrawResult(null)
+    }
+  }, [pendingDrawResult])
 
   const isWrongNetwork = isConnected && chain && chain.id !== TARGET_CHAIN_ID
   const targetChain = TARGET_CHAIN_ID === sepolia.id ? sepolia : anvil
@@ -216,16 +233,21 @@ export function RafflePage() {
             <Card className="border-4 border-amber-400 bg-gradient-to-br from-purple-900/70 to-violet-900/70 backdrop-blur-sm shadow-[0_0_50px_rgba(251,191,36,0.6)] relative overflow-hidden flex-1">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.1),transparent_70%)]"></div>
               <CardContent className="p-8 relative z-10 h-full flex flex-col justify-center">
-                <div className="flex flex-col items-center justify-center">
-                  {!isLoadingTime && isEntryWindowClosed ? (
-                    <div className="text-center">
+                <div className="flex flex-col items-center justify-center relative">
+                  <PhaserWheel
+                    players={currentPlayers}
+                    connectedAddress={address}
+                    spinTarget={spinTarget}
+                    frozen={frozen}
+                    onSpinComplete={handleSpinComplete}
+                  />
+                  {!isLoadingTime && isEntryWindowClosed && !spinTarget && !drawingResult && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-purple-950/80 backdrop-blur-sm rounded-lg">
                       <div className="text-5xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse">
                         DRAWING IN PROGRESS...
                       </div>
                       <p className="text-pink-300 font-bold mt-4 text-xl">Please wait for winner selection</p>
                     </div>
-                  ) : (
-                    <PhaserWheel players={currentPlayers} connectedAddress={address} />
                   )}
                 </div>
               </CardContent>
