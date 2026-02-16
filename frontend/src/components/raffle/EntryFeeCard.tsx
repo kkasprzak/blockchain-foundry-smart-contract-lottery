@@ -8,6 +8,7 @@ interface EntryFeeCardProps {
   isLoadingFee: boolean
   isConnected: boolean
   isEntryWindowClosed: boolean
+  frozen?: boolean
   isWaitingForSignature?: boolean
   isWaitingForConfirmation?: boolean
   showEntrySuccess: boolean
@@ -23,6 +24,7 @@ export function EntryFeeCard({
   isLoadingFee,
   isConnected,
   isEntryWindowClosed,
+  frozen = false,
   isWaitingForSignature,
   isWaitingForConfirmation,
   showEntrySuccess,
@@ -42,11 +44,11 @@ export function EntryFeeCard({
         ? "CONFIRM WALLET..."
         : isWaitingForConfirmation
           ? "CONFIRMING..."
-          : isEntryWindowClosed
+          : isEntryWindowClosed || frozen
             ? "ENTRIES CLOSED"
             : "ENTER RAFFLE"
 
-  const isDisabled = !isConnected || isEntryWindowClosed || isWaitingForSignature || isWaitingForConfirmation || showEntrySuccess
+  const isDisabled = !isConnected || isEntryWindowClosed || frozen || isWaitingForSignature || isWaitingForConfirmation || showEntrySuccess
   const showFlash = isConnected && !isEntryWindowClosed && !isButtonHovered && !isWaitingForSignature && !isWaitingForConfirmation
   const showEtherscanLink = isWaitingForConfirmation && txHash && explorerBaseUrl
 

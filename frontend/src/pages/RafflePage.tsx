@@ -4,8 +4,7 @@ import { useAccount } from "wagmi"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trophy, Coins } from "lucide-react"
 import { PhaserWheel } from "@/components/wheel/PhaserWheel"
-import { DrawCompletedAnnouncement } from "@/components/DrawCompletedAnnouncement"
-import { RoundTransitionBanner } from "@/components/RoundTransitionBanner"
+import { RoundResultBanner } from "@/components/RoundResultBanner"
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner"
 import { PrizePoolCard } from "@/components/raffle/PrizePoolCard"
 import { CountdownCard } from "@/components/raffle/CountdownCard"
@@ -65,7 +64,6 @@ export function RafflePage() {
   const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 12 })
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
   const [pendingDrawResult, setPendingDrawResult] = useState<DrawingResult | null>(null)
-  const [completedRoundInfo, setCompletedRoundInfo] = useState<DrawingResult | null>(null)
 
   const spinTarget = pendingDrawResult?.winner ?? null
   const frozen = pendingDrawResult !== null || drawingResult !== null
@@ -91,22 +89,14 @@ export function RafflePage() {
     entrySuccessTimeoutRef.current = setTimeout(() => setShowEntrySuccess(false), 3000)
   }
 
-  const showTransitionBanner = (roundInfo: DrawingResult) => {
-    setCompletedRoundInfo(roundInfo)
-    if (transitionBannerTimeoutRef.current) clearTimeout(transitionBannerTimeoutRef.current)
-    transitionBannerTimeoutRef.current = setTimeout(() => setCompletedRoundInfo(null), 15000)
-  }
-
   const [showClaimSuccess, setShowClaimSuccess] = useState(false)
   const claimSuccessTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const claimSuccessProcessedRef = useRef(false)
-  const transitionBannerTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
     return () => {
       if (entrySuccessTimeoutRef.current) clearTimeout(entrySuccessTimeoutRef.current)
       if (claimSuccessTimeoutRef.current) clearTimeout(claimSuccessTimeoutRef.current)
-      if (transitionBannerTimeoutRef.current) clearTimeout(transitionBannerTimeoutRef.current)
     }
   }, [])
 
@@ -232,28 +222,12 @@ export function RafflePage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 relative z-10">
         {drawingResult && (
-          <DrawCompletedAnnouncement
-            roundNumber={drawingResult.roundNumber}
+          <RoundResultBanner
+            completedRoundNumber={drawingResult.roundNumber}
             winner={drawingResult.winner}
             prizeFormatted={drawingResult.prizeFormatted}
             isCurrentUserWinner={isCurrentUserWinner ?? false}
-            onDismiss={() => {
-              showTransitionBanner(drawingResult)
-              setDrawingResult(null)
-            }}
-          />
-        )}
-
-        {completedRoundInfo && !drawingResult && (
-          <RoundTransitionBanner
-            completedRoundNumber={completedRoundInfo.roundNumber}
-            winner={completedRoundInfo.winner}
-            prizeFormatted={completedRoundInfo.prizeFormatted}
-            isCurrentUserWinner={completedRoundInfo.winner.toLowerCase() === address?.toLowerCase()}
-            onDismiss={() => {
-              if (transitionBannerTimeoutRef.current) clearTimeout(transitionBannerTimeoutRef.current)
-              setCompletedRoundInfo(null)
-            }}
+            onNextRound={() => setDrawingResult(null)}
           />
         )}
 
@@ -261,12 +235,18 @@ export function RafflePage() {
           {/* Left Sidebar */}
           <div className="flex flex-col space-y-6 lg:col-span-3">
             <PrizePoolCard prizePool={prizePool} isLoading={isLoadingPrizePool} />
-            <CountdownCard hours={timeLeft.hours} minutes={timeLeft.minutes} seconds={timeLeft.seconds} />
+            <CountdownCard
+              hours={timeLeft.hours}
+              minutes={timeLeft.minutes}
+              seconds={timeLeft.seconds}
+              frozen={frozen}
+            />
             <EntryFeeCard
               entranceFee={entranceFee}
               isLoadingFee={isLoadingFee}
               isConnected={isConnected}
               isEntryWindowClosed={isEntryWindowClosed}
+              frozen={frozen}
               isWaitingForSignature={isEnterWaitingForSignature}
               isWaitingForConfirmation={isEnterWaitingForConfirmation}
               showEntrySuccess={showEntrySuccess}
