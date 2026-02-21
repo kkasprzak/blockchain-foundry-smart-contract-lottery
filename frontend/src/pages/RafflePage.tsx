@@ -61,12 +61,19 @@ export function RafflePage() {
 
   const { roundNumber, refetch: refetchRoundNumber } = useRoundNumber()
   const { players: currentPlayers } = useLiveCurrentRoundPlayers({ roundNumber })
-  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 9 })
+  const { winners: liveRecentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 9 })
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
   const [pendingDrawResult, setPendingDrawResult] = useState<DrawingResult | null>(null)
 
   const spinTarget = pendingDrawResult?.winner ?? null
   const frozen = pendingDrawResult !== null || drawingResult !== null
+
+  const [displayedWinners, setDisplayedWinners] = useState(liveRecentWinners)
+  useEffect(() => {
+    if (!frozen) {
+      setDisplayedWinners(liveRecentWinners)
+    }
+  }, [frozen, liveRecentWinners])
 
   const {
     errorMessage,
@@ -317,7 +324,7 @@ export function RafflePage() {
           </div>
         </div>
 
-        <RecentWinnersCard winners={recentWinners} isLoading={isLoadingWinners} />
+        <RecentWinnersCard winners={displayedWinners} isLoading={isLoadingWinners} />
       </div>
     </div>
   )
