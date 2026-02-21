@@ -116,9 +116,6 @@ export function RafflePage() {
       } else {
         setPendingDrawResult(result)
       }
-      // Only update Prize Pool and Your Winnings immediately
-      // Everything else updates when user clicks "NEXT ROUND"
-      refetchPrizePool()
       refetchUnclaimedPrize()
     },
   })
@@ -232,6 +229,7 @@ export function RafflePage() {
               refetchEntries()
               refetchPlayerEntryCount()
               refetchRoundNumber()
+              refetchPrizePool()
             }}
           />
         )}
