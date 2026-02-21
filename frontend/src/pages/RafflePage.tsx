@@ -71,6 +71,7 @@ export function RafflePage() {
   const [displayedWinners, setDisplayedWinners] = useState(liveRecentWinners)
   useEffect(() => {
     if (!frozen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayedWinners(liveRecentWinners)
     }
   }, [frozen, liveRecentWinners])
