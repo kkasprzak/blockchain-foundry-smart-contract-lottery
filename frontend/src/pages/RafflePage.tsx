@@ -61,12 +61,20 @@ export function RafflePage() {
 
   const { roundNumber, refetch: refetchRoundNumber } = useRoundNumber()
   const { players: currentPlayers } = useLiveCurrentRoundPlayers({ roundNumber })
-  const { winners: recentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 9 })
+  const { winners: liveRecentWinners, isLoading: isLoadingWinners } = useLiveRecentWinners({ limit: 9 })
   const [drawingResult, setDrawingResult] = useState<DrawingResult | null>(null)
   const [pendingDrawResult, setPendingDrawResult] = useState<DrawingResult | null>(null)
 
   const spinTarget = pendingDrawResult?.winner ?? null
   const frozen = pendingDrawResult !== null || drawingResult !== null
+
+  const [displayedWinners, setDisplayedWinners] = useState(liveRecentWinners)
+  useEffect(() => {
+    if (!frozen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDisplayedWinners(liveRecentWinners)
+    }
+  }, [frozen, liveRecentWinners])
 
   const {
     errorMessage,
@@ -116,10 +124,6 @@ export function RafflePage() {
       } else {
         setPendingDrawResult(result)
       }
-      // Only update Prize Pool and Your Winnings immediately
-      // Everything else updates when user clicks "NEXT ROUND"
-      refetchPrizePool()
-      refetchUnclaimedPrize()
     },
   })
 
@@ -232,6 +236,8 @@ export function RafflePage() {
               refetchEntries()
               refetchPlayerEntryCount()
               refetchRoundNumber()
+              refetchPrizePool()
+              refetchUnclaimedPrize()
             }}
           />
         )}
@@ -319,7 +325,7 @@ export function RafflePage() {
           </div>
         </div>
 
-        <RecentWinnersCard winners={recentWinners} isLoading={isLoadingWinners} />
+        <RecentWinnersCard winners={displayedWinners} isLoading={isLoadingWinners} />
       </div>
     </div>
   )
