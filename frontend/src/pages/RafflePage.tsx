@@ -123,7 +123,6 @@ export function RafflePage() {
       } else {
         setPendingDrawResult(result)
       }
-      refetchUnclaimedPrize()
     },
   })
 
@@ -237,6 +236,7 @@ export function RafflePage() {
               refetchPlayerEntryCount()
               refetchRoundNumber()
               refetchPrizePool()
+              refetchUnclaimedPrize()
             }}
           />
         )}
